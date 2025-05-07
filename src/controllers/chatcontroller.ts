@@ -1,224 +1,156 @@
 import { PrismaClient, User } from "../generated/prisma";
 import { PubSub } from 'graphql-subscriptions';
 
+
 const prisma = new PrismaClient();
 const pubsub = new PubSub();
+const parseCookies = (cookieString: string) => {
+  return cookieString.split(';').reduce((acc: Record<string, string>, cookie) => {
+    const [name, value] = cookie.trim().split('=');
+    acc[name] = decodeURIComponent(value);
+    return acc;
+  }, {});
+};
+const extractUserIdFromToken = (token: string): string => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
+    return payload.userId;
+  } catch (error) {
+    console.error('Error extracting user ID from token:', error);
+    throw new Error('Invalid token');
+  }
+};
 
-
-export const getConversations = async (_: any, __: any, context: any) => {
+const getCurrentUserId = (context: any): string => {
   const cookies = context.req.headers.cookie;
-    
-  // Helper function to parse cookies
-  const parseCookies = (cookieString: string) => {
-    return cookieString.split(';').reduce((acc: Record<string, string>, cookie) => {
-      const [name, value] = cookie.trim().split('=');
-      acc[name] = decodeURIComponent(value);
-      return acc;
-    }, {});
-  };
+  if (!cookies) throw new Error('Unauthorized - No cookies found');
   
-  // Parse cookies
-  const parsedCookies = cookies ? parseCookies(cookies) : {};
-  
-  // Get the JWT token
+  const parsedCookies = parseCookies(cookies);
   const token = parsedCookies.token;
   
   if (!token) throw new Error('Unauthorized - No token found');
   
-  // Decode the JWT token (without verification - for demonstration only)
-  // In production, you should verify the token signature
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
-  
-  const userId = payload.userId;
+  return extractUserIdFromToken(token);
+};
 
-  if (!userId) throw new Error('Unauthorized');
+export const getConversations = async (_: any, __: any, context: any) => {
+  const userId = getCurrentUserId(context);
     
-    return await prisma.conversation.findMany({
-      where: {
-        participants: {
-          some: {
-            userId: userId
-          }
-        }
-      },
-      include: {
-        participants: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                avatar: true
-              }
-            }
-          }
-        },
-        messages: {
-          take: 1,
-          orderBy: {
-            createdAt: 'desc'
-          }
+  return await prisma.conversation.findMany({
+    where: {
+      participants: {
+        some: {
+          userId: userId
         }
       }
-    });
-  }
-
-  export const getMessages = async (_: any, { conversationId }: { conversationId: string }, context: any) => {
-    const cookies = context.req.headers.cookie;
-    const parseCookies = (cookieString: string) => {
-      return cookieString.split(';').reduce((acc: Record<string, string>, cookie) => {
-        const [name, value] = cookie.trim().split('=');
-        acc[name] = decodeURIComponent(value);
-        return acc;
-      }, {});
-    };
-    
-    // Parse cookies
-    const parsedCookies = cookies ? parseCookies(cookies) : {};
-    
-    // Get the JWT token
-    const token = parsedCookies.token;
-    
-    if (!token) throw new Error('Unauthorized - No token found');
-    
-    // Decode the JWT token (without verification - for demonstration only)
-    // In production, you should verify the token signature
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
-    
-    const userId = payload.userId;
-    // Verify user is part of conversation
-    const participant = await prisma.conversationParticipant.findFirst({
-      where: {
-        userId: userId,
-        conversationId
-      }
-    });
-    
-    if (!participant) throw new Error('Unauthorized');
-    
-    return await prisma.message.findMany({
-      where: {
-        conversationId
-      },
-      orderBy: {
-        createdAt: 'asc'
-      },
-      include: {
-        sender: true,
-        readBy: true
-      }
-    });
-  }
-
-
-  export const createConversation = async (_: any, { participantIds }: { participantIds: string[] }, context: any) => {
-    // Extract cookies from headers
-    const cookies = context.req.headers.cookie;
-    
-    // Helper function to parse cookies
-    const parseCookies = (cookieString: string) => {
-      return cookieString.split(';').reduce((acc: Record<string, string>, cookie) => {
-        const [name, value] = cookie.trim().split('=');
-        acc[name] = decodeURIComponent(value);
-        return acc;
-      }, {});
-    };
-    
-    // Parse cookies
-    const parsedCookies = cookies ? parseCookies(cookies) : {};
-    
-    // Get the JWT token
-    const token = parsedCookies.token;
-    
-    if (!token) throw new Error('Unauthorized - No token found');
-    
-    // Decode the JWT token (without verification - for demonstration only)
-    // In production, you should verify the token signature
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
-    
-    const userId = payload.userId;
-    
-    console.log('Decoded userId:', userId, participantIds);
-    
-    if (!userId) throw new Error('Unauthorized - Invalid user ID');
-    
-    // Ensure we're not creating a conversation with ourselves
-    if (participantIds.length === 1 && participantIds[0] === userId) {
-      throw new Error('Cannot create conversation with yourself');  
-    }
-    
-    // Check if conversation already exists between these users (for 1:1 chats)
-    if (participantIds.length === 1) {
-      // Create an array of both user IDs, ensuring neither is undefined
-      const userIdsToCheck = [userId, participantIds[0]].filter(id => id !== undefined);
-      
-      // First approach: Find conversations where both users are participants
-      const existingConversation = await prisma.conversation.findFirst({
-        where: {
-          AND: [
-            { isGroup: false },
-            {
-              participants: {
-                some: {
-                  userId: userId
-                }
-              }
-            },
-            {
-              participants: {
-                some: {
-                  userId: participantIds[0]
-                }
-              }
-            },
-            {
-              participants: {
-                every: {
-                  userId: {
-                    in: userIdsToCheck
-                  }
-                }
-              }
-            }
-          ]
-        },
+    },
+    include: {
+      participants: {
         include: {
-          participants: {
-            include: {
-              user: true
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatar: true
+            }
+          }
+        }
+      },
+      messages: {
+        take: 1,
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }
+    }
+  });
+};
+
+export const getMessages = async (_: any, { conversationId }: { conversationId: string }, context: any) => {
+  const userId = getCurrentUserId(context);
+  
+  // Verify user is part of conversation
+  const participant = await prisma.conversationParticipant.findFirst({
+    where: {
+      userId: userId,
+      conversationId
+    }
+  });
+  
+  if (!participant) throw new Error('Unauthorized');
+  
+  return await prisma.message.findMany({
+    where: {
+      conversationId
+    },
+    orderBy: {
+      createdAt: 'asc'
+    },
+    include: {
+      sender: true,
+      readBy: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatar: true
+            }
+          }
+        }
+      }
+    }
+  });
+};
+
+export const createConversation = async (_: any, { participantIds }: { participantIds: string[] }, context: any) => {
+  const userId = getCurrentUserId(context);
+  
+  console.log('Creating conversation for userId:', userId, 'with participants:', participantIds);
+  
+  // Ensure we're not creating a conversation with ourselves
+  if (participantIds.length === 1 && participantIds[0] === userId) {
+    throw new Error('Cannot create conversation with yourself');  
+  }
+  
+  // Check if conversation already exists between these users (for 1:1 chats)
+  if (participantIds.length === 1) {
+    // Create an array of both user IDs, ensuring neither is undefined
+    const userIdsToCheck = [userId, participantIds[0]].filter(id => id !== undefined);
+    
+    // First approach: Find conversations where both users are participants
+    const existingConversation = await prisma.conversation.findFirst({
+      where: {
+        AND: [
+          { isGroup: false },
+          {
+            participants: {
+              some: {
+                userId: userId
+              }
             }
           },
-          messages: {
-            take: 1,
-            orderBy: {
-              createdAt: 'desc'
+          {
+            participants: {
+              some: {
+                userId: participantIds[0]
+              }
+            }
+          },
+          {
+            participants: {
+              every: {
+                userId: {
+                  in: userIdsToCheck
+                }
+              }
             }
           }
-        }
-      });
-      
-      if (existingConversation) {
-        return existingConversation;
-      }
-    }
-    
-    // Create new conversation if one doesn't exist
-    const conversation = await prisma.conversation.create({
-      data: {
-        isGroup: participantIds.length > 1,
-        participants: {
-          create: [
-            { userId },
-            ...participantIds.map(id => ({ userId: id }))
-          ]
-        }
+        ]
       },
       include: {
         participants: {
@@ -235,86 +167,151 @@ export const getConversations = async (_: any, __: any, context: any) => {
       }
     });
     
-    return conversation;
+    if (existingConversation) {
+      return existingConversation;
+    }
   }
   
-  export const sendMessage = async (_: any, { input }: { input: { conversationId: string, content: string } }, context: any) => {
-    const cookies = context.req.headers.cookie;
-    
-    // Helper function to parse cookies
-    const parseCookies = (cookieString: string) => {
-      return cookieString.split(';').reduce((acc: Record<string, string>, cookie) => {
-        const [name, value] = cookie.trim().split('=');
-        acc[name] = decodeURIComponent(value);
-        return acc;
-      }, {});
-    };
-    
-    // Parse cookies
-    const parsedCookies = cookies ? parseCookies(cookies) : {};
-    
-    // Get the JWT token
-    const token = parsedCookies.token;
-    
-    if (!token) throw new Error('Unauthorized - No token found');
-    
-    // Decode the JWT token (without verification - for demonstration only)
-    // In production, you should verify the token signature
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const payload = JSON.parse(Buffer.from(base64, 'base64').toString('utf-8'));
-    
-    const userId = payload.userId;
-  
-    if (!userId) throw new Error('Unauthorized');
-    
-    // Verify user is part of conversation
-    const participant = await prisma.conversationParticipant.findFirst({
-      where: {
-        userId: userId,
-        conversationId: input.conversationId
+  // Create new conversation if one doesn't exist
+  const conversation = await prisma.conversation.create({
+    data: {
+      isGroup: participantIds.length > 1,
+      participants: {
+        create: [
+          { userId },
+          ...participantIds.map(id => ({ userId: id }))
+        ]
       }
-    });
-    
-    if (!participant) throw new Error('Unauthorized');
-    
-    // Make sure conversationId and content are defined
-    if (!input.conversationId) throw new Error('Conversation ID is required');
-    if (!input.content) throw new Error('Message content is required');
-    
-    const message = await prisma.message.create({
-      data: {
-        content: input.content,
-        senderId: userId,
-        conversationId: input.conversationId,
-        type: 'TEXT'
+    },
+    include: {
+      participants: {
+        include: {
+          user: true
+        }
       },
-      include: {
-        sender: true,
-        conversation: {
-          include: {
-            participants: true
+      messages: {
+        take: 1,
+        orderBy: {
+          createdAt: 'desc'
+        }
+      }
+    }
+  });
+  
+  return conversation;
+};
+
+export const sendMessage = async (_: any, { input }: { input: { conversationId: string, content: string } }, context: any) => {
+  const userId = getCurrentUserId(context);
+
+  // Verify user is part of conversation
+  const participant = await prisma.conversationParticipant.findFirst({
+    where: {
+      userId: userId,
+      conversationId: input.conversationId
+    }
+  });
+  
+  if (!participant) throw new Error('Unauthorized');
+  
+  // Make sure conversationId and content are defined
+  if (!input.conversationId) throw new Error('Conversation ID is required');
+  if (!input.content) throw new Error('Message content is required');
+  
+  // Create the new message
+  const message = await prisma.message.create({
+    data: {
+      content: input.content,
+      senderId: userId,
+      conversationId: input.conversationId,
+      type: 'TEXT',
+    },
+    include: {
+      sender: true,
+      conversation: {
+        include: {
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  avatar: true
+                }
+              }
+            }
           }
         }
       }
-    });
-    
-    // Publish the new message to subscribers
-    pubsub.publish(`MESSAGE_SENT_${input.conversationId}`, {
-      messageSent: message
-    });
-    
-    // Notify all participants except sender
-    message.conversation.participants.forEach(participant => {
-      if (participant.userId !== userId) {
-        pubsub.publish(`NEW_MESSAGE_${participant.userId}`, {
-          newMessage: message
-        });
+    }
+  });
+
+  // Mark as read by sender
+  await prisma.messageRead.create({
+    data: {
+      messageId: message.id,
+      userId: userId
+    }
+  });
+
+  // Get the complete message with readBy info
+  const completeMessage = await prisma.message.findUnique({
+    where: { id: message.id },
+    include: {
+      sender: true,
+      readBy: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatar: true
+            }
+          }
+        }
       }
-    });
-    
-    return message;
+    }
+  });
+
+  if (!completeMessage) {
+    throw new Error('Failed to create message');
   }
+
+  // Extract participant IDs for direct notifications
+  const participantIds = message.conversation.participants
+    .map(participant => participant.user.id)
+    .filter(id => id !== userId); // exclude sender
+
+  // Use Socket.IO to emit the message to all participants
+  if (context.io) {
+    try {
+      // First, emit to the conversation room
+      context.io.to(input.conversationId).emit('message', {
+        type: 'NEW_MESSAGE',
+        payload: completeMessage
+      });
+      console.log(`Emitted message to conversation room: ${input.conversationId}`);
+      
+      // Then, also emit to each participant's personal room to ensure delivery
+      participantIds.forEach(participantId => {
+        context.io.to(participantId).emit('message', {
+          type: 'NEW_MESSAGE',
+          payload: completeMessage
+        });
+        console.log(`Emitted message to user room: ${participantId}`);
+      });
+    } catch (error) {
+      console.error('Error emitting socket message:', error);
+      // Don't fail the mutation if socket emission fails
+    }
+  } else {
+    console.warn('Socket.IO instance not available in context');
+  }
+
+  return completeMessage;
+};
   export const markAsRead = async (_: any, { messageId }: { messageId: string }, context: any) => {
     if (!context.userId) throw new Error('Unauthorized');
     

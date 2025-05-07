@@ -119,11 +119,14 @@ export const connectGraphQL = async (config: ServerConfig) => {
   // Apply Apollo middleware
   app.use(
     expressMiddleware(server, {
-      context: async ({ req, res }) => {
-        return { req, res }; // Provide the Context
-      },
-    })
-  );
+      context: async ({ req, res }) => ({
+        req,
+        res,
+        io, // Make io available in all resolvers
+       
+      }),
+    }    )
+  )
   
   // Start Express server
   const expressServer = app.listen(config.port);

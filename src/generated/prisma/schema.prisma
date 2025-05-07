@@ -30,6 +30,7 @@ model User {
   receivedMessages Message[]                 @relation("ReceivedMessages")
   conversations    ConversationParticipant[]
   createdGroups    Group[]                   @relation("GroupCreator")
+  MessageRead      MessageRead[]
 }
 
 model Conversation {
@@ -76,9 +77,8 @@ model MessageRead {
   messageId String
   userId    String
   readAt    DateTime @default(now())
-  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
-
-  @@unique([messageId, userId])
+  message   Message  @relation(fields: [messageId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Group {

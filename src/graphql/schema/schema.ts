@@ -134,6 +134,7 @@ type Conversation {
 type ConversationParticipant {
   id: ID!
   user: User!
+  conversation: Conversation!
   joinedAt: String!
   leftAt: String
 }
@@ -148,7 +149,36 @@ type Subscription {
   messageSent(conversationId: ID!): Message!
   newMessage: Message!
 }
+type Group {
+  id: ID!
+  name: String!
+  description: String
+  avatar: String
+  createdAt: String!
+  updatedAt: String!
+  creator: User!
+  conversation: Conversation!
+  participants: [ConversationParticipant!]!
+}
 
+input CreateGroupInput {
+  name: String!
+  description: String
+  participantIds: [ID!]!
+}
+
+input UpdateGroupInput {
+  groupId: ID!
+  name: String
+  description: String
+  avatar: String
+}
+
+
+extend type Query {
+  getGroup(groupId: ID!): Group
+  getUserGroups: [Group!]!
+}
   type Query {
   users: [User]
   user(id: ID!): User
@@ -169,5 +199,11 @@ type Mutation {
   createConversation(participantIds: [ID!]!): Conversation!
   sendMessage(input: SendMessageInput!): Message!
   markAsRead(messageId: ID!): Message!
+   createGroup(input: CreateGroupInput!): Group!
+  updateGroup(input: UpdateGroupInput!): Group!
+  addGroupParticipants(groupId: ID!, participantIds: [ID!]!): Group!
+  removeGroupParticipant(groupId: ID!, participantId: ID!): Group!
+  leaveGroup(groupId: ID!): Boolean!
+  deleteGroup(groupId: ID!): Boolean!
 }
 `;

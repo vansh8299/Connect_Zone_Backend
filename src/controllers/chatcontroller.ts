@@ -1,5 +1,9 @@
 import { PrismaClient, User } from "../generated/prisma";
 import { PubSub } from 'graphql-subscriptions';
+import { CreateGroupInput, UpdateGroupInput } from "../graphql/types/chattypes";
+
+
+
 
 
 const prisma = new PrismaClient();
@@ -419,3 +423,430 @@ export const sendMessage = async (_: any, { input }: { input: { conversationId: 
 //   }
 // };
 
+// Group controllers
+
+// src/resolvers/group.resolvers.ts
+
+
+// Query Resolvers
+export const getGroup = async (_: any, { groupId }: { groupId: string }, context: any) => {
+  const userId = getCurrentUserId(context);
+  
+  // Verify user is a participant in the group
+  const participant = await prisma.conversationParticipant.findFirst({
+    where: {
+      conversationId: groupId,
+      userId,
+      leftAt: null
+    }
+  });
+  
+  if (!participant) {
+    throw new Error('Not authorized to view this group');
+  }
+  
+  // Get group with conversation details
+  const group = await prisma.group.findUnique({
+    where: { id: groupId },
+    include: {
+      creator: true,
+      conversation: {
+        include: {
+          participants: {
+            include: {
+              user: true
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  if (!group) {
+    throw new Error('Group not found');
+  }
+  
+  return {
+    ...group,
+    participants: group?.conversation?.participants || []
+  };
+};
+
+export const getUserGroups = async (_: any, __: any, context: any) => {
+  const userId = getCurrentUserId(context);
+  
+  // Find all groups the user is a participant in
+  const participantGroups = await prisma.conversationParticipant.findMany({
+    where: {
+      userId,
+      leftAt: null,
+      conversation: {
+        isGroup: true
+      }
+    },
+    include: {
+      conversation: {
+        include: {
+          group: {
+            include: {
+              creator: true
+            }
+          },
+          participants: {
+            include: {
+              user: true
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  // Extract and format group data
+  return participantGroups.map(participant => {
+    const group = participant.conversation.group;
+    return {
+      ...group,
+      conversation: participant.conversation,
+      participants: participant.conversation.participants
+    };
+  });
+};
+
+// Mutation Resolvers
+export const createGroup = async (_: any, { input }: { input: CreateGroupInput }, context: any) => {
+  const userId = getCurrentUserId(context);
+  const { name, description, participantIds } = input;
+  
+  // Validate input
+  if (!name || name.trim() === '') {
+    throw new Error('Group name is required');
+  }
+  
+  if (participantIds.length === 0) {
+    throw new Error('At least one participant is required');
+  }
+  
+  // Make sure all provided IDs are valid users
+  const users = await prisma.user.findMany({
+    where: {
+      id: {
+        in: participantIds
+      }
+    }
+  });
+  
+  if (users.length !== participantIds.length) {
+    throw new Error('One or more participant IDs are invalid');
+  }
+  
+  // Create transaction to ensure both conversation and group are created
+  return prisma.$transaction(async (tx) => {
+    // Create the conversation first
+    const conversation = await tx.conversation.create({
+      data: {
+        isGroup: true,
+        name,
+        participants: {
+          create: [
+            { userId }, // Add creator
+            ...participantIds.map(id => ({ userId: id })) // Add other participants
+          ]
+        }
+      },
+      include: {
+        participants: {
+          include: {
+            user: true
+          }
+        }
+      }
+    });
+    
+    // Create the group using the conversation ID
+    const group = await tx.group.create({
+      data: {
+        id: conversation.id, // Use same ID for both
+        name,
+        description,
+        creatorId: userId
+      },
+      include: {
+        creator: true
+      }
+    });
+    
+    return {
+      ...group,
+      conversation,
+      participants: conversation.participants
+    };
+  });
+};
+
+export const updateGroup = async (_: any, { input }: { input: UpdateGroupInput }, context: any) => {
+  const userId = getCurrentUserId(context);
+  const { groupId, name, description, avatar } = input;
+  
+  // Verify user is the creator of the group
+  const group = await prisma.group.findUnique({
+    where: { id: groupId }
+  });
+  
+  if (!group) {
+    throw new Error('Group not found');
+  }
+  
+  if (group.creatorId !== userId) {
+    throw new Error('Only the group creator can update group details');
+  }
+  
+  // Update both group and conversation name
+  return prisma.$transaction(async (tx) => {
+    // Update conversation if name changed
+    if (name) {
+      await tx.conversation.update({
+        where: { id: groupId },
+        data: { name }
+      });
+    }
+    
+    // Update group details
+    const updatedGroup = await tx.group.update({
+      where: { id: groupId },
+      data: {
+        name: name || undefined,
+        description: description !== undefined ? description : undefined,
+        avatar: avatar !== undefined ? avatar : undefined
+      },
+      include: {
+        creator: true,
+        conversation: {
+          include: {
+            participants: {
+              include: {
+                user: true
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    return {
+      ...updatedGroup,
+      participants: updatedGroup.conversation.participants
+    };
+  });
+};
+
+export const addGroupParticipants = async (_: any, { groupId, participantIds }: { groupId: string, participantIds: string[] }, context: any) => {
+  const userId = getCurrentUserId(context);
+  
+  // Verify user is in the group
+  const userParticipant = await prisma.conversationParticipant.findFirst({
+    where: {
+      conversationId: groupId,
+      userId,
+      leftAt: null
+    }
+  });
+  
+  if (!userParticipant) {
+    throw new Error('Not authorized to add participants to this group');
+  }
+  
+  // Make sure all provided IDs are valid users
+  const users = await prisma.user.findMany({
+    where: {
+      id: {
+        in: participantIds
+      }
+    }
+  });
+  
+  if (users.length !== participantIds.length) {
+    throw new Error('One or more participant IDs are invalid');
+  }
+  
+  // Check if any users are already participants
+  const existingParticipants = await prisma.conversationParticipant.findMany({
+    where: {
+      conversationId: groupId,
+      userId: {
+        in: participantIds
+      },
+      leftAt: null
+    }
+  });
+  
+  const newParticipantIds = participantIds.filter(
+    id => !existingParticipants.some(p => p.userId === id)
+  );
+  
+  // Add new participants
+  await prisma.conversationParticipant.createMany({
+    data: newParticipantIds.map(id => ({
+      conversationId: groupId,
+      userId: id
+    }))
+  });
+  
+  // Get updated group
+  const group = await prisma.group.findUnique({
+    where: { id: groupId },
+    include: {
+      creator: true,
+      conversation: {
+        include: {
+          participants: {
+            include: {
+              user: true
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  return {
+    ...group,
+    participants: group?.conversation?.participants || [] 
+  };
+};
+
+export const removeGroupParticipant = async (_: any, { groupId, participantId }: { groupId: string, participantId: string }, context: any) => {
+  const userId = getCurrentUserId(context);
+  
+  // Check if user is the creator
+  const group = await prisma.group.findUnique({
+    where: { id: groupId }
+  });
+  
+  if (!group) {
+    throw new Error('Group not found');
+  }
+  
+  // Only creator can remove others, or user can remove themselves
+  if (group.creatorId !== userId && participantId !== userId) {
+    throw new Error('Not authorized to remove this participant');
+  }
+  
+  // Check if participant exists
+  const participant = await prisma.conversationParticipant.findFirst({
+    where: {
+      conversationId: groupId,
+      userId: participantId,
+      leftAt: null
+    }
+  });
+  
+  if (!participant) {
+    throw new Error('Participant not found in this group');
+  }
+  
+  // Don't allow removing the creator
+  if (participantId === group.creatorId) {
+    throw new Error('Cannot remove the group creator');
+  }
+  
+  // Mark participant as left
+  await prisma.conversationParticipant.update({
+    where: { id: participant.id },
+    data: { leftAt: new Date() }
+  });
+  
+  // Get updated group
+  const updatedGroup = await prisma.group.findUnique({
+    where: { id: groupId },
+    include: {
+      creator: true,
+      conversation: {
+        include: {
+          participants: {
+            where: {
+              leftAt: null
+            },
+            include: {
+              user: true
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  return {
+    ...updatedGroup,
+    participants: updatedGroup?.conversation?.participants || []
+  };
+};
+
+export const leaveGroup = async (_: any, { groupId }: { groupId: string }, context: any) => {
+  const userId = getCurrentUserId(context);
+  
+  // Find user's participant record
+  const participant = await prisma.conversationParticipant.findFirst({
+    where: {
+      conversationId: groupId,
+      userId,
+      leftAt: null
+    }
+  });
+  
+  if (!participant) {
+    throw new Error('You are not a member of this group');
+  }
+  
+  // Check if user is the creator
+  const group = await prisma.group.findUnique({
+    where: { id: groupId }
+  });
+  
+  if (!group) {
+    throw new Error('Group not found');
+  }
+  
+  if (group.creatorId === userId) {
+    throw new Error('Group creator cannot leave. Transfer ownership or delete the group instead.');
+  }
+  
+  // Mark as left
+  await prisma.conversationParticipant.update({
+    where: { id: participant.id },
+    data: { leftAt: new Date() }
+  });
+  
+  return true;
+};
+
+export const deleteGroup = async (_: any, { groupId }: { groupId: string }, context: any) => {
+  const userId = getCurrentUserId(context);
+  
+  // Verify user is the creator
+  const group = await prisma.group.findUnique({
+    where: { id: groupId }
+  });
+  
+  if (!group) {
+    throw new Error('Group not found');
+  }
+  
+  if (group.creatorId !== userId) {
+    throw new Error('Only the group creator can delete the group');
+  }
+  
+  // Delete group and conversation
+  await prisma.$transaction([
+    prisma.group.delete({
+      where: { id: groupId }
+    }),
+    prisma.conversation.delete({
+      where: { id: groupId }
+    })
+  ]);
+  
+  return true;
+};
+
+// Types for TypeScript

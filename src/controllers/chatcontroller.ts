@@ -1,6 +1,7 @@
 import { PrismaClient, User } from "../generated/prisma";
 import { PubSub } from 'graphql-subscriptions';
 import { CreateGroupInput, UpdateGroupInput } from "../graphql/types/chattypes";
+import { uploadGroupAvatar } from "../utils/cloudinary";
 
 
 
@@ -42,16 +43,20 @@ const getCurrentUserId = (context: any): string => {
 export const getConversations = async (_: any, __: any, context: any) => {
   const userId = getCurrentUserId(context);
     
-  return await prisma.conversation.findMany({
+  const conversations = await prisma.conversation.findMany({
     where: {
       participants: {
         some: {
-          userId: userId
+          userId: userId,
+          leftAt: null // Only include conversations where user hasn't left
         }
       }
     },
     include: {
       participants: {
+        where: {
+          leftAt: null // Only include active participants
+        },
         include: {
           user: {
             select: {
@@ -68,8 +73,44 @@ export const getConversations = async (_: any, __: any, context: any) => {
         orderBy: {
           createdAt: 'desc'
         }
+      },
+      group: {
+        include: {
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatar: true
+            }
+          }
+        }
       }
     }
+  });
+
+  // Transform the data to ensure consistent structure
+  return conversations.map(conversation => {
+    // For group conversations, use group name and avatar
+    if (conversation.isGroup) {
+      return {
+        ...conversation,
+        name: conversation.group?.name || conversation.name,
+        avatar: conversation.group?.avatar || null,
+        // Filter out any null participants just in case
+        participants: conversation.participants.filter(p => p !== null)
+      };
+    }
+    
+    // For 1:1 conversations, find the other participant
+    const otherParticipant = conversation.participants.find(p => p.user.id !== userId);
+    return {
+      ...conversation,
+      name: otherParticipant?.user.firstName + ' ' + otherParticipant?.user.lastName,
+      avatar: otherParticipant?.user.avatar || null,
+      // Filter out any null participants just in case
+      participants: conversation.participants.filter(p => p !== null)
+    };
   });
 };
 
@@ -432,20 +473,19 @@ export const sendMessage = async (_: any, { input }: { input: { conversationId: 
 export const getGroup = async (_: any, { groupId }: { groupId: string }, context: any) => {
   const userId = getCurrentUserId(context);
   
-  // Verify user is a participant in the group
-  const participant = await prisma.conversationParticipant.findFirst({
+  // Verify user is a participant in the group (including those who may have left)
+  const userParticipant = await prisma.conversationParticipant.findFirst({
     where: {
       conversationId: groupId,
-      userId,
-      leftAt: null
+      userId
     }
   });
   
-  if (!participant) {
+  if (!userParticipant) {
     throw new Error('Not authorized to view this group');
   }
   
-  // Get group with conversation details
+  // Get group with conversation details, filtering out participants who left
   const group = await prisma.group.findUnique({
     where: { id: groupId },
     include: {
@@ -453,6 +493,9 @@ export const getGroup = async (_: any, { groupId }: { groupId: string }, context
       conversation: {
         include: {
           participants: {
+            where: {
+              leftAt: null // Only include participants who haven't left
+            },
             include: {
               user: true
             }
@@ -468,7 +511,7 @@ export const getGroup = async (_: any, { groupId }: { groupId: string }, context
   
   return {
     ...group,
-    participants: group?.conversation?.participants || []
+    participants: group.conversation.participants
   };
 };
 
@@ -514,9 +557,11 @@ export const getUserGroups = async (_: any, __: any, context: any) => {
 };
 
 // Mutation Resolvers
+// Backend Controller - Updated createGroup with file upload support
+
 export const createGroup = async (_: any, { input }: { input: CreateGroupInput }, context: any) => {
   const userId = getCurrentUserId(context);
-  const { name, description, participantIds } = input;
+  const { name, description, participantIds, avatarBase64 } = input;
   
   // Validate input
   if (!name || name.trim() === '') {
@@ -538,6 +583,46 @@ export const createGroup = async (_: any, { input }: { input: CreateGroupInput }
   
   if (users.length !== participantIds.length) {
     throw new Error('One or more participant IDs are invalid');
+  }
+  
+  // Handle avatar upload if provided
+  let avatarUrl = null;
+  if (avatarBase64) {
+    try {
+      // Extract mimetype and base64 data
+      const matches = avatarBase64.match(/^data:(.+);base64,(.+)$/);
+      
+      if (matches && matches.length === 3) {
+        const mimetype = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        // Validate file type
+        if (!mimetype.startsWith('image/')) {
+          throw new Error('Only image files are allowed for group avatar');
+        }
+        
+        // Validate file size (5MB limit)
+        if (buffer.length > 5 * 1024 * 1024) {
+          throw new Error('Avatar image size should be less than 5MB');
+        }
+        
+        // Prepare file data for cloudinary
+        const fileData = {
+          buffer,
+          mimetype,
+          originalname: 'group-avatar.jpg',
+        };
+        
+        // Upload to Cloudinary with group avatar folder
+        avatarUrl = await uploadGroupAvatar(fileData);
+      } else {
+        throw new Error('Invalid avatar format. Please provide a valid base64 image.');
+      }
+    } catch (error) {
+      console.error('Error uploading group avatar:', error);
+      throw new Error(`Failed to upload group avatar`);
+    }
   }
   
   // Create transaction to ensure both conversation and group are created
@@ -569,7 +654,8 @@ export const createGroup = async (_: any, { input }: { input: CreateGroupInput }
         id: conversation.id, // Use same ID for both
         name,
         description,
-        creatorId: userId
+        creatorId: userId,
+        avatar: avatarUrl // Add avatar URL if uploaded
       },
       include: {
         creator: true
@@ -583,6 +669,9 @@ export const createGroup = async (_: any, { input }: { input: CreateGroupInput }
     };
   });
 };
+
+// Helper function for uploading group avatars (add this to your cloudinary utils)
+
 
 export const updateGroup = async (_: any, { input }: { input: UpdateGroupInput }, context: any) => {
   const userId = getCurrentUserId(context);

@@ -37,3 +37,24 @@ export const uploadImage = async (file: FileData): Promise<string> => {
     throw new Error("Failed to upload image");
   }
 };
+export const uploadGroupAvatar = async (file: FileData): Promise<string> => {
+  try {
+    // Convert file buffer to base64
+    const fileStr = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    
+    // Upload to cloudinary with group-specific settings
+    const uploadedResponse = await cloudinary.uploader.upload(fileStr, {
+      folder: "group_avatars", // Different folder for group avatars
+      transformation: [
+        { width: 300, height: 300, crop: "fill" },
+        { quality: "auto" },
+        { format: "auto" } // Auto-optimize format
+      ],
+    });
+    
+    return uploadedResponse.secure_url;
+  } catch (error) {
+    console.error("Error uploading group avatar to Cloudinary:", error);
+    throw new Error("Failed to upload group avatar");
+  }
+};

@@ -127,6 +127,7 @@ type Conversation {
   participants: [ConversationParticipant!]!
   messages: [Message!]!
   isGroup: Boolean!
+  group: Group
   createdAt: String!
   updatedAt: String!
 }
@@ -165,6 +166,7 @@ input CreateGroupInput {
   name: String!
   description: String
   participantIds: [ID!]!
+   avatarBase64: String
 }
 
 input UpdateGroupInput {

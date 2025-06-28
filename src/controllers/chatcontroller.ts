@@ -675,11 +675,12 @@ export const createGroup = async (_: any, { input }: { input: CreateGroupInput }
 
 export const updateGroup = async (_: any, { input }: { input: UpdateGroupInput }, context: any) => {
   const userId = getCurrentUserId(context);
-  const { groupId, name, description, avatar } = input;
+  const { groupId, name, description, avatarBase64 } = input;
   
   // Verify user is the creator of the group
   const group = await prisma.group.findUnique({
-    where: { id: groupId }
+    where: { id: groupId },
+    include: { conversation: true }
   });
   
   if (!group) {
@@ -689,10 +690,50 @@ export const updateGroup = async (_: any, { input }: { input: UpdateGroupInput }
   if (group.creatorId !== userId) {
     throw new Error('Only the group creator can update group details');
   }
+
+  let avatarUrl = group.avatar;
+  
+  // Handle avatar upload if provided
+  if (avatarBase64) {
+    try {
+      // Extract mimetype and base64 data
+      const matches = avatarBase64.match(/^data:(.+);base64,(.+)$/);
+      
+      if (matches && matches.length === 3) {
+        const mimetype = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        // Validate file type
+        if (!mimetype.startsWith('image/')) {
+          throw new Error('Only image files are allowed for group avatar');
+        }
+        
+        // Validate file size (5MB limit)
+        if (buffer.length > 5 * 1024 * 1024) {
+          throw new Error('Avatar image size should be less than 5MB');
+        }
+        
+        // Prepare file data for cloudinary
+        const fileData = {
+          buffer,
+          mimetype,
+          originalname: 'group-avatar.jpg',
+        };
+        
+        // Upload to Cloudinary with group avatar folder
+        avatarUrl = await uploadGroupAvatar(fileData);
+      } else {
+        throw new Error('Invalid avatar format. Please provide a valid base64 image.');
+      }
+    } catch (error) {
+      console.error('Error uploading group avatar:', error);
+      throw new Error(`Failed to upload group avatar`);
+    }
+  }
   
   // Update both group and conversation name
   return prisma.$transaction(async (tx) => {
-    // Update conversation if name changed
     if (name) {
       await tx.conversation.update({
         where: { id: groupId },
@@ -700,13 +741,12 @@ export const updateGroup = async (_: any, { input }: { input: UpdateGroupInput }
       });
     }
     
-    // Update group details
     const updatedGroup = await tx.group.update({
       where: { id: groupId },
       data: {
         name: name || undefined,
         description: description !== undefined ? description : undefined,
-        avatar: avatar !== undefined ? avatar : undefined
+        avatar: avatarUrl
       },
       include: {
         creator: true,
@@ -758,28 +798,38 @@ export const addGroupParticipants = async (_: any, { groupId, participantIds }: 
     throw new Error('One or more participant IDs are invalid');
   }
   
-  // Check if any users are already participants
+  // Check for existing participants (both active and inactive)
   const existingParticipants = await prisma.conversationParticipant.findMany({
     where: {
       conversationId: groupId,
       userId: {
         in: participantIds
-      },
-      leftAt: null
+      }
     }
   });
   
-  const newParticipantIds = participantIds.filter(
-    id => !existingParticipants.some(p => p.userId === id)
-  );
-  
-  // Add new participants
-  await prisma.conversationParticipant.createMany({
-    data: newParticipantIds.map(id => ({
-      conversationId: groupId,
-      userId: id
-    }))
-  });
+  // Process each participant
+  for (const participantId of participantIds) {
+    const existingParticipant = existingParticipants.find(p => p.userId === participantId);
+    
+    if (existingParticipant) {
+      // If participant exists but has left, update their record
+      if (existingParticipant.leftAt) {
+        await prisma.conversationParticipant.update({
+          where: { id: existingParticipant.id },
+          data: { leftAt: null }
+        });
+      }
+    } else {
+      // If participant doesn't exist at all, create new record
+      await prisma.conversationParticipant.create({
+        data: {
+          conversationId: groupId,
+          userId: participantId
+        }
+      });
+    }
+  }
   
   // Get updated group
   const group = await prisma.group.findUnique({
@@ -937,5 +987,86 @@ export const deleteGroup = async (_: any, { groupId }: { groupId: string }, cont
   
   return true;
 };
-
+export const deleteMessage = async (_: any, { messageId }: { messageId: string }, context: any) => {
+  const userId = getCurrentUserId(context);
+  
+  // Find the message and verify ownership
+  const message = await prisma.message.findUnique({
+    where: { id: messageId },
+    include: {
+      conversation: {
+        include: {
+          participants: true
+        }
+      }
+    }
+  });
+  
+  if (!message) {
+    throw new Error('Message not found');
+  }
+  
+  // Check if user is the sender of the message
+  if (message.senderId !== userId) {
+    throw new Error('You can only delete your own messages');
+  }
+  
+  // Verify user is still a participant in the conversation
+  const isParticipant = message.conversation.participants.some(
+    p => p.userId === userId && p.leftAt === null
+  );
+  
+  if (!isParticipant) {
+    throw new Error('You are not authorized to delete messages in this conversation');
+  }
+  
+  // Delete message reads first (foreign key constraint)
+  await prisma.messageRead.deleteMany({
+    where: { messageId }
+  });
+  
+  // Delete the message
+  const deletedMessage = await prisma.message.delete({
+    where: { id: messageId }
+  });
+  
+  // Emit socket event to notify other participants
+  if (context.io) {
+    try {
+      // Emit to conversation room
+      context.io.to(message.conversationId).emit('message', {
+        type: 'MESSAGE_DELETED',
+        payload: {
+          messageId,
+          conversationId: message.conversationId,
+          senderId: userId
+        }
+      });
+      
+      // Also emit to participant rooms
+      const participantIds = message.conversation.participants
+        .map(p => p.userId)
+        .filter(id => id !== userId);
+        
+      participantIds.forEach(participantId => {
+        context.io.to(participantId).emit('message', {
+          type: 'MESSAGE_DELETED',
+          payload: {
+            messageId,
+            conversationId: message.conversationId,
+            senderId: userId
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Error emitting message deletion event:', error);
+    }
+  }
+  
+  return {
+    success: true,
+    messageId,
+    conversationId: message.conversationId
+  };
+};
 // Types for TypeScript

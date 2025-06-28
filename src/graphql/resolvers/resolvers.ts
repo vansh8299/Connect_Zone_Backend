@@ -1,4 +1,4 @@
-import { addGroupParticipants, createConversation, createGroup, deleteGroup, getConversations, getGroup, getMessages, getUserByEmail, getUserGroups, leaveGroup, markAsRead, removeGroupParticipant, searchUsers, sendMessage, updateGroup } from "../../controllers/chatcontroller";
+import { addGroupParticipants, createConversation, createGroup, deleteGroup, deleteMessage, getConversations, getGroup, getMessages, getUserByEmail, getUserGroups, leaveGroup, markAsRead, removeGroupParticipant, searchUsers, sendMessage, updateGroup } from "../../controllers/chatcontroller";
 import {
   getAllUsers,
   getUserById,
@@ -35,6 +35,7 @@ export const graphQLResolver = {
     googleAuth,
     updateUser,
     updatePassword,
+    deleteMessage,
     createConversation: createConversation,
     sendMessage: sendMessage,
     markAsRead: markAsRead,

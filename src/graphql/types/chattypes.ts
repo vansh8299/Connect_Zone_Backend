@@ -9,5 +9,5 @@ export interface CreateGroupInput {
     groupId: string;
     name?: string;
     description?: string;
-    avatar?: string;
+    avatarBase64?: string;
   }

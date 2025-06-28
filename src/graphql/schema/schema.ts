@@ -173,13 +173,17 @@ input UpdateGroupInput {
   groupId: ID!
   name: String
   description: String
-  avatar: String
+  avatarBase64: String 
 }
-
 
 extend type Query {
   getGroup(groupId: ID!): Group
   getUserGroups: [Group!]!
+}
+  type DeleteMessageResponse {
+  success: Boolean!
+  messageId: String!
+  conversationId: String!
 }
   type Query {
   users: [User]
@@ -198,6 +202,7 @@ type Mutation {
   googleAuth(input: GoogleAuthInput!): GoogleAuthPayload!
   updateUser(input: UpdateUserInput!): UpdateUserResponse!
   updatePassword(input: UpdatePasswordInput!): UpdatePasswordResponse!
+    deleteMessage(messageId: String!): DeleteMessageResponse!
   createConversation(participantIds: [ID!]!): Conversation!
   sendMessage(input: SendMessageInput!): Message!
   markAsRead(messageId: ID!): Message!

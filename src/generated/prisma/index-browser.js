@@ -156,7 +156,8 @@ exports.Prisma.MessageScalarFieldEnum = {
   updatedAt: 'updatedAt',
   receiverId: 'receiverId',
   type: 'type',
-  fileUrl: 'fileUrl'
+  fileUrl: 'fileUrl',
+  deletedFor: 'deletedFor'
 };
 
 exports.Prisma.MessageReadScalarFieldEnum = {

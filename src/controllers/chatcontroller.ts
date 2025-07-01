@@ -113,7 +113,6 @@ export const getConversations = async (_: any, __: any, context: any) => {
     };
   });
 };
-
 export const getMessages = async (_: any, { conversationId }: { conversationId: string }, context: any) => {
   const userId = getCurrentUserId(context);
   
@@ -127,7 +126,7 @@ export const getMessages = async (_: any, { conversationId }: { conversationId: 
   
   if (!participant) throw new Error('Unauthorized');
   
-  return await prisma.message.findMany({
+  const messages = await prisma.message.findMany({
     where: {
       conversationId
     },
@@ -149,6 +148,12 @@ export const getMessages = async (_: any, { conversationId }: { conversationId: 
         }
       }
     }
+  });
+  
+  // Filter out messages that are deleted for this user
+  return messages.filter(message => {
+    const deletedFor = message.deletedFor || [];
+    return !deletedFor.includes(userId);
   });
 };
 
@@ -987,10 +992,10 @@ export const deleteGroup = async (_: any, { groupId }: { groupId: string }, cont
   
   return true;
 };
-export const deleteMessage = async (_: any, { messageId }: { messageId: string }, context: any) => {
+export const deleteMessage = async (_: any, { input }: { input: { messageId: string, deleteType: string } }, context: any) => {
   const userId = getCurrentUserId(context);
+  const { messageId, deleteType } = input;
   
-  // Find the message and verify ownership
   const message = await prisma.message.findUnique({
     where: { id: messageId },
     include: {
@@ -1001,72 +1006,68 @@ export const deleteMessage = async (_: any, { messageId }: { messageId: string }
       }
     }
   });
-  
-  if (!message) {
-    throw new Error('Message not found');
-  }
-  
-  // Check if user is the sender of the message
-  if (message.senderId !== userId) {
-    throw new Error('You can only delete your own messages');
-  }
-  
-  // Verify user is still a participant in the conversation
+
+  if (!message) throw new Error('Message not found');
+
+  // Verify user is a participant
   const isParticipant = message.conversation.participants.some(
     p => p.userId === userId && p.leftAt === null
   );
   
-  if (!isParticipant) {
-    throw new Error('You are not authorized to delete messages in this conversation');
-  }
-  
-  // Delete message reads first (foreign key constraint)
-  await prisma.messageRead.deleteMany({
-    where: { messageId }
-  });
-  
-  // Delete the message
-  const deletedMessage = await prisma.message.delete({
-    where: { id: messageId }
-  });
-  
-  // Emit socket event to notify other participants
-  if (context.io) {
-    try {
-      // Emit to conversation room
+  if (!isParticipant) throw new Error('Unauthorized');
+
+  if (deleteType === 'DELETE_FOR_EVERYONE') {
+    // Only sender can delete for everyone
+    if (message.senderId !== userId) {
+      throw new Error('Only the sender can delete for everyone');
+    }
+
+    await prisma.messageRead.deleteMany({ where: { messageId } });
+    await prisma.message.delete({ where: { id: messageId } });
+
+    // Emit to all participants
+    if (context.io) {
       context.io.to(message.conversationId).emit('message', {
         type: 'MESSAGE_DELETED',
         payload: {
           messageId,
           conversationId: message.conversationId,
-          senderId: userId
+          senderId: userId,
+          deleteType: 'DELETE_FOR_EVERYONE'
         }
       });
-      
-      // Also emit to participant rooms
-      const participantIds = message.conversation.participants
-        .map(p => p.userId)
-        .filter(id => id !== userId);
-        
-      participantIds.forEach(participantId => {
-        context.io.to(participantId).emit('message', {
-          type: 'MESSAGE_DELETED',
-          payload: {
-            messageId,
-            conversationId: message.conversationId,
-            senderId: userId
-          }
-        });
+    }
+  } 
+  else if (deleteType === 'DELETE_FOR_ME') {
+    // For received messages, add user to deletedFor array
+    const updatedDeletedFor = Array.isArray(message.deletedFor) 
+      ? [...message.deletedFor, userId]
+      : [userId];
+
+    await prisma.message.update({
+      where: { id: messageId },
+      data: { deletedFor: updatedDeletedFor }
+    });
+
+    // Emit only to the user who deleted it
+    if (context.io) {
+      context.io.to(userId).emit('message', {
+        type: 'MESSAGE_DELETED',
+        payload: {
+          messageId,
+          conversationId: message.conversationId,
+          senderId: userId,
+          deleteType: 'DELETE_FOR_ME'
+        }
       });
-    } catch (error) {
-      console.error('Error emitting message deletion event:', error);
     }
   }
-  
+
   return {
     success: true,
     messageId,
-    conversationId: message.conversationId
+    conversationId: message.conversationId,
+    deleteType
   };
 };
 // Types for TypeScript

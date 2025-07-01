@@ -51,6 +51,7 @@ CREATE TABLE "Message" (
     "receiverId" TEXT,
     "type" "MessageType" NOT NULL DEFAULT 'TEXT',
     "fileUrl" TEXT,
+    "deletedFor" TEXT[] DEFAULT ARRAY[]::TEXT[],
 
     CONSTRAINT "Message_pkey" PRIMARY KEY ("id")
 );

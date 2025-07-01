@@ -104,6 +104,16 @@ type Message {
   createdAt: String!
   updatedAt: String!
   type: MessageType!
+  deletedFor: [String!]!
+}
+enum DeleteType {
+  DELETE_FOR_EVERYONE
+  DELETE_FOR_ME
+}
+
+input DeleteMessageInput {
+  messageId: ID!
+  deleteType: DeleteType!
 }
 
 type MessageRead {
@@ -182,8 +192,9 @@ extend type Query {
 }
   type DeleteMessageResponse {
   success: Boolean!
-  messageId: String!
-  conversationId: String!
+  messageId: ID!
+  conversationId: ID!
+  deleteType: DeleteType!
 }
   type Query {
   users: [User]
@@ -202,7 +213,7 @@ type Mutation {
   googleAuth(input: GoogleAuthInput!): GoogleAuthPayload!
   updateUser(input: UpdateUserInput!): UpdateUserResponse!
   updatePassword(input: UpdatePasswordInput!): UpdatePasswordResponse!
-    deleteMessage(messageId: String!): DeleteMessageResponse!
+     deleteMessage(input: DeleteMessageInput!): DeleteMessageResponse!
   createConversation(participantIds: [ID!]!): Conversation!
   sendMessage(input: SendMessageInput!): Message!
   markAsRead(messageId: ID!): Message!

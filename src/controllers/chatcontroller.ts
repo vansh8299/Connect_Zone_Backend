@@ -1071,3 +1071,85 @@ export const deleteMessage = async (_: any, { input }: { input: { messageId: str
   };
 };
 // Types for TypeScript
+export const updateMessage = async (
+  _: any, 
+  { input }: { input: { messageId: string, newContent: string } }, 
+  context: any
+) => {
+  const userId = getCurrentUserId(context);
+  const { messageId, newContent } = input;
+
+  // Validate input
+  if (!newContent || newContent.trim() === '') {
+    throw new Error('Message content cannot be empty');
+  }
+
+  // Get the message to update
+  const message = await prisma.message.findUnique({
+    where: { id: messageId },
+    include: {
+      sender: true,
+      conversation: {
+        include: {
+          participants: {
+            where: {
+              leftAt: null
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!message) {
+    throw new Error('Message not found');
+  }
+
+  // Verify the user is the sender
+  if (message.senderId !== userId) {
+    throw new Error('You can only edit your own messages');
+  }
+
+  // Verify the user is still a participant in the conversation
+  const isParticipant = message.conversation.participants.some(
+    p => p.userId === userId
+  );
+  
+  if (!isParticipant) {
+    throw new Error('You are no longer a participant in this conversation');
+  }
+
+  // Update the message
+  const updatedMessage = await prisma.message.update({
+    where: { id: messageId },
+    data: {
+      content: newContent,
+      updatedAt: new Date() // Explicitly set updatedAt
+    },
+    include: {
+      sender: true,
+      readBy: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatar: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Notify all participants via Socket.IO
+  if (context.io) {
+    context.io.to(message.conversationId).emit('message', {
+      type: 'MESSAGE_UPDATED',
+      payload: updatedMessage
+    });
+  }
+
+  return updatedMessage;
+};

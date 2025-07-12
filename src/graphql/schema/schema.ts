@@ -185,6 +185,10 @@ input UpdateGroupInput {
   description: String
   avatarBase64: String 
 }
+input UpdateMessageInput {
+  messageId: ID!
+  newContent: String!
+}
 
 extend type Query {
   getGroup(groupId: ID!): Group
@@ -212,6 +216,7 @@ type Mutation {
   verifyOtp(input: VerifyOtpInput!): VerifyOtpResponse!
   googleAuth(input: GoogleAuthInput!): GoogleAuthPayload!
   updateUser(input: UpdateUserInput!): UpdateUserResponse!
+  updateMessage(input: UpdateMessageInput!): Message!
   updatePassword(input: UpdatePasswordInput!): UpdatePasswordResponse!
      deleteMessage(input: DeleteMessageInput!): DeleteMessageResponse!
   createConversation(participantIds: [ID!]!): Conversation!

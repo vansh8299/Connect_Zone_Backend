@@ -156,10 +156,7 @@ input SendMessageInput {
 }
 
 
-type Subscription {
-  messageSent(conversationId: ID!): Message!
-  newMessage: Message!
-}
+
 type Group {
   id: ID!
   name: String!
@@ -189,7 +186,52 @@ input UpdateMessageInput {
   messageId: ID!
   newContent: String!
 }
+type Call {
+  id: ID!
+  caller: User!
+  receiver: User!
+  status: CallStatus!
+  startedAt: String!
+  endedAt: String
+  duration: Int
+}
 
+enum CallStatus {
+  INITIATED
+  ONGOING
+  REJECTED
+  MISSED
+  COMPLETED
+}
+
+type CallPayload {
+  call: Call!
+  sdpOffer: String
+  iceCandidate: String
+}
+
+type IceCandidatePayload {
+  callId: ID!
+  candidate: String!
+}
+
+input StartCallInput {
+  receiverId: ID!
+}
+
+input AnswerCallInput {
+  callId: ID!
+  sdpAnswer: String!
+}
+
+input IceCandidateInput {
+  callId: ID!
+  candidate: String!
+}
+
+input EndCallInput {
+  callId: ID!
+}
 extend type Query {
   getGroup(groupId: ID!): Group
   getUserGroups: [Group!]!
@@ -206,6 +248,7 @@ extend type Query {
   userByEmail(email: String!): User
   searchUsers(searchTerm: String!): [User]
   getConversations: [Conversation!]!
+getCallHistory: [Call!]!
 
   getMessages(conversationId: ID!): [Message!]!
 }
@@ -222,11 +265,23 @@ type Mutation {
   createConversation(participantIds: [ID!]!): Conversation!
   sendMessage(input: SendMessageInput!): Message!
   markAsRead(messageId: ID!): Message!
+   startCall(input: StartCallInput!): CallPayload!
+  answerCall(input: AnswerCallInput!): CallPayload!
+  endCall(input: EndCallInput!): Call!
+  addIceCandidate(input: IceCandidateInput!): Boolean!
    createGroup(input: CreateGroupInput!): Group!
   updateGroup(input: UpdateGroupInput!): Group!
   addGroupParticipants(groupId: ID!, participantIds: [ID!]!): Group!
   removeGroupParticipant(groupId: ID!, participantId: ID!): Group!
   leaveGroup(groupId: ID!): Boolean!
   deleteGroup(groupId: ID!): Boolean!
+}
+  type Subscription {
+  messageSent(conversationId: ID!): Message!
+  newMessage: Message!
+  callInitiated: CallPayload!
+  callAnswered: CallPayload!
+  callEnded: Call!
+  iceCandidateReceived: IceCandidatePayload!
 }
 `;

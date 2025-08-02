@@ -31,6 +31,8 @@ model User {
   conversations    ConversationParticipant[]
   createdGroups    Group[]                   @relation("GroupCreator")
   MessageRead      MessageRead[]
+  callsInitiated   Call[]                    @relation("Caller")
+  callsReceived    Call[]                    @relation("Receiver")
 }
 
 model Conversation {
@@ -100,4 +102,26 @@ enum MessageType {
   FILE
   AUDIO
   VIDEO
+}
+model Call {
+  id          String     @id @default(cuid())
+  callerId    String
+  receiverId  String
+  status      CallStatus
+  startedAt   DateTime   @default(now())
+  endedAt     DateTime?
+  duration    Int?
+  caller      User       @relation("Caller", fields: [callerId], references: [id])
+  receiver    User       @relation("Receiver", fields: [receiverId], references: [id])
+
+  @@index([callerId])
+  @@index([receiverId])
+}
+
+enum CallStatus {
+  INITIATED
+  ONGOING
+  REJECTED
+  MISSED
+  COMPLETED
 }

@@ -1,6 +1,9 @@
 -- CreateEnum
 CREATE TYPE "MessageType" AS ENUM ('TEXT', 'IMAGE', 'FILE', 'AUDIO', 'VIDEO');
 
+-- CreateEnum
+CREATE TYPE "CallStatus" AS ENUM ('INITIATED', 'ONGOING', 'REJECTED', 'MISSED', 'COMPLETED');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -79,6 +82,19 @@ CREATE TABLE "Group" (
     CONSTRAINT "Group_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Call" (
+    "id" TEXT NOT NULL,
+    "callerId" TEXT NOT NULL,
+    "receiverId" TEXT NOT NULL,
+    "status" "CallStatus" NOT NULL,
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "endedAt" TIMESTAMP(3),
+    "duration" INTEGER,
+
+    CONSTRAINT "Call_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -87,6 +103,12 @@ CREATE UNIQUE INDEX "User_googleId_key" ON "User"("googleId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ConversationParticipant_userId_conversationId_key" ON "ConversationParticipant"("userId", "conversationId");
+
+-- CreateIndex
+CREATE INDEX "Call_callerId_idx" ON "Call"("callerId");
+
+-- CreateIndex
+CREATE INDEX "Call_receiverId_idx" ON "Call"("receiverId");
 
 -- AddForeignKey
 ALTER TABLE "ConversationParticipant" ADD CONSTRAINT "ConversationParticipant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -114,3 +136,9 @@ ALTER TABLE "Group" ADD CONSTRAINT "Group_creatorId_fkey" FOREIGN KEY ("creatorI
 
 -- AddForeignKey
 ALTER TABLE "Group" ADD CONSTRAINT "Group_id_fkey" FOREIGN KEY ("id") REFERENCES "Conversation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Call" ADD CONSTRAINT "Call_callerId_fkey" FOREIGN KEY ("callerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Call" ADD CONSTRAINT "Call_receiverId_fkey" FOREIGN KEY ("receiverId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

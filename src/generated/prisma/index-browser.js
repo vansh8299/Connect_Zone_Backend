@@ -177,6 +177,16 @@ exports.Prisma.GroupScalarFieldEnum = {
   creatorId: 'creatorId'
 };
 
+exports.Prisma.CallScalarFieldEnum = {
+  id: 'id',
+  callerId: 'callerId',
+  receiverId: 'receiverId',
+  status: 'status',
+  startedAt: 'startedAt',
+  endedAt: 'endedAt',
+  duration: 'duration'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -199,13 +209,22 @@ exports.MessageType = exports.$Enums.MessageType = {
   VIDEO: 'VIDEO'
 };
 
+exports.CallStatus = exports.$Enums.CallStatus = {
+  INITIATED: 'INITIATED',
+  ONGOING: 'ONGOING',
+  REJECTED: 'REJECTED',
+  MISSED: 'MISSED',
+  COMPLETED: 'COMPLETED'
+};
+
 exports.Prisma.ModelName = {
   User: 'User',
   Conversation: 'Conversation',
   ConversationParticipant: 'ConversationParticipant',
   Message: 'Message',
   MessageRead: 'MessageRead',
-  Group: 'Group'
+  Group: 'Group',
+  Call: 'Call'
 };
 
 /**

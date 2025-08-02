@@ -1,3 +1,4 @@
+import { addIceCandidate, answerCall, callSubscriptions, endCall, getCallHistory, startCall } from "../../controllers/callcontrollers";
 import { addGroupParticipants, createConversation, createGroup, deleteGroup, deleteMessage, getConversations, getGroup, getMessages, getUserByEmail, getUserGroups, leaveGroup, markAsRead, removeGroupParticipant, searchUsers, sendMessage, updateGroup, updateMessage } from "../../controllers/chatcontroller";
 import {
   getAllUsers,
@@ -23,7 +24,7 @@ export const graphQLResolver = {
     userByEmail: getUserByEmail,
     searchUsers: searchUsers,
     getGroup,
-    getUserGroups
+    getUserGroups,getCallHistory
     
 
   },
@@ -45,7 +46,11 @@ export const graphQLResolver = {
 addGroupParticipants,
 removeGroupParticipant,
 leaveGroup,
-deleteGroup
+deleteGroup,
+   startCall,
+    answerCall,
+    endCall,
+    addIceCandidate
   },
   Subscription: {
     messageSent: {
@@ -62,5 +67,7 @@ deleteGroup
         return (pubsub as any).asyncIterator([`NEW_MESSAGE_${context.userId}`]);
       }
     }
-  }
+    
+  },
+    ...callSubscriptions
 };

@@ -34,6 +34,7 @@ export const connectGraphQL = async (config: ServerConfig) => {
   const server = new ApolloServer<Context>({
     typeDefs: graphQLSchema,
     resolvers: graphQLResolver,
+
     introspection: config.env !== "PRODUCTION",
     includeStacktraceInErrorResponses: config.env !== "PRODUCTION",
   });

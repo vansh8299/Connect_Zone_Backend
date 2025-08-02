@@ -43,6 +43,11 @@ export type MessageRead = $Result.DefaultSelection<Prisma.$MessageReadPayload>
  * 
  */
 export type Group = $Result.DefaultSelection<Prisma.$GroupPayload>
+/**
+ * Model Call
+ * 
+ */
+export type Call = $Result.DefaultSelection<Prisma.$CallPayload>
 
 /**
  * Enums
@@ -58,11 +63,26 @@ export namespace $Enums {
 
 export type MessageType = (typeof MessageType)[keyof typeof MessageType]
 
+
+export const CallStatus: {
+  INITIATED: 'INITIATED',
+  ONGOING: 'ONGOING',
+  REJECTED: 'REJECTED',
+  MISSED: 'MISSED',
+  COMPLETED: 'COMPLETED'
+};
+
+export type CallStatus = (typeof CallStatus)[keyof typeof CallStatus]
+
 }
 
 export type MessageType = $Enums.MessageType
 
 export const MessageType: typeof $Enums.MessageType
+
+export type CallStatus = $Enums.CallStatus
+
+export const CallStatus: typeof $Enums.CallStatus
 
 /**
  * ##  Prisma Client ʲˢ
@@ -248,6 +268,16 @@ export class PrismaClient<
     * ```
     */
   get group(): Prisma.GroupDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.call`: Exposes CRUD operations for the **Call** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Calls
+    * const calls = await prisma.call.findMany()
+    * ```
+    */
+  get call(): Prisma.CallDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -693,7 +723,8 @@ export namespace Prisma {
     ConversationParticipant: 'ConversationParticipant',
     Message: 'Message',
     MessageRead: 'MessageRead',
-    Group: 'Group'
+    Group: 'Group',
+    Call: 'Call'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -712,7 +743,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "conversation" | "conversationParticipant" | "message" | "messageRead" | "group"
+      modelProps: "user" | "conversation" | "conversationParticipant" | "message" | "messageRead" | "group" | "call"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1160,6 +1191,80 @@ export namespace Prisma {
           }
         }
       }
+      Call: {
+        payload: Prisma.$CallPayload<ExtArgs>
+        fields: Prisma.CallFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.CallFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CallPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.CallFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CallPayload>
+          }
+          findFirst: {
+            args: Prisma.CallFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CallPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.CallFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CallPayload>
+          }
+          findMany: {
+            args: Prisma.CallFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CallPayload>[]
+          }
+          create: {
+            args: Prisma.CallCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CallPayload>
+          }
+          createMany: {
+            args: Prisma.CallCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.CallCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CallPayload>[]
+          }
+          delete: {
+            args: Prisma.CallDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CallPayload>
+          }
+          update: {
+            args: Prisma.CallUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CallPayload>
+          }
+          deleteMany: {
+            args: Prisma.CallDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.CallUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.CallUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CallPayload>[]
+          }
+          upsert: {
+            args: Prisma.CallUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CallPayload>
+          }
+          aggregate: {
+            args: Prisma.CallAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCall>
+          }
+          groupBy: {
+            args: Prisma.CallGroupByArgs<ExtArgs>
+            result: $Utils.Optional<CallGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.CallCountArgs<ExtArgs>
+            result: $Utils.Optional<CallCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1250,6 +1355,7 @@ export namespace Prisma {
     message?: MessageOmit
     messageRead?: MessageReadOmit
     group?: GroupOmit
+    call?: CallOmit
   }
 
   /* Types for Logging */
@@ -1349,6 +1455,8 @@ export namespace Prisma {
     conversations: number
     createdGroups: number
     MessageRead: number
+    callsInitiated: number
+    callsReceived: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -1357,6 +1465,8 @@ export namespace Prisma {
     conversations?: boolean | UserCountOutputTypeCountConversationsArgs
     createdGroups?: boolean | UserCountOutputTypeCountCreatedGroupsArgs
     MessageRead?: boolean | UserCountOutputTypeCountMessageReadArgs
+    callsInitiated?: boolean | UserCountOutputTypeCountCallsInitiatedArgs
+    callsReceived?: boolean | UserCountOutputTypeCountCallsReceivedArgs
   }
 
   // Custom InputTypes
@@ -1403,6 +1513,20 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountMessageReadArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: MessageReadWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountCallsInitiatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CallWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountCallsReceivedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CallWhereInput
   }
 
 
@@ -1698,6 +1822,8 @@ export namespace Prisma {
     conversations?: boolean | User$conversationsArgs<ExtArgs>
     createdGroups?: boolean | User$createdGroupsArgs<ExtArgs>
     MessageRead?: boolean | User$MessageReadArgs<ExtArgs>
+    callsInitiated?: boolean | User$callsInitiatedArgs<ExtArgs>
+    callsReceived?: boolean | User$callsReceivedArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -1750,6 +1876,8 @@ export namespace Prisma {
     conversations?: boolean | User$conversationsArgs<ExtArgs>
     createdGroups?: boolean | User$createdGroupsArgs<ExtArgs>
     MessageRead?: boolean | User$MessageReadArgs<ExtArgs>
+    callsInitiated?: boolean | User$callsInitiatedArgs<ExtArgs>
+    callsReceived?: boolean | User$callsReceivedArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -1763,6 +1891,8 @@ export namespace Prisma {
       conversations: Prisma.$ConversationParticipantPayload<ExtArgs>[]
       createdGroups: Prisma.$GroupPayload<ExtArgs>[]
       MessageRead: Prisma.$MessageReadPayload<ExtArgs>[]
+      callsInitiated: Prisma.$CallPayload<ExtArgs>[]
+      callsReceived: Prisma.$CallPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -2175,6 +2305,8 @@ export namespace Prisma {
     conversations<T extends User$conversationsArgs<ExtArgs> = {}>(args?: Subset<T, User$conversationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ConversationParticipantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     createdGroups<T extends User$createdGroupsArgs<ExtArgs> = {}>(args?: Subset<T, User$createdGroupsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$GroupPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     MessageRead<T extends User$MessageReadArgs<ExtArgs> = {}>(args?: Subset<T, User$MessageReadArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MessageReadPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    callsInitiated<T extends User$callsInitiatedArgs<ExtArgs> = {}>(args?: Subset<T, User$callsInitiatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    callsReceived<T extends User$callsReceivedArgs<ExtArgs> = {}>(args?: Subset<T, User$callsReceivedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2720,6 +2852,54 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: MessageReadScalarFieldEnum | MessageReadScalarFieldEnum[]
+  }
+
+  /**
+   * User.callsInitiated
+   */
+  export type User$callsInitiatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+    where?: CallWhereInput
+    orderBy?: CallOrderByWithRelationInput | CallOrderByWithRelationInput[]
+    cursor?: CallWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CallScalarFieldEnum | CallScalarFieldEnum[]
+  }
+
+  /**
+   * User.callsReceived
+   */
+  export type User$callsReceivedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+    where?: CallWhereInput
+    orderBy?: CallOrderByWithRelationInput | CallOrderByWithRelationInput[]
+    cursor?: CallWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: CallScalarFieldEnum | CallScalarFieldEnum[]
   }
 
   /**
@@ -8258,6 +8438,1132 @@ export namespace Prisma {
 
 
   /**
+   * Model Call
+   */
+
+  export type AggregateCall = {
+    _count: CallCountAggregateOutputType | null
+    _avg: CallAvgAggregateOutputType | null
+    _sum: CallSumAggregateOutputType | null
+    _min: CallMinAggregateOutputType | null
+    _max: CallMaxAggregateOutputType | null
+  }
+
+  export type CallAvgAggregateOutputType = {
+    duration: number | null
+  }
+
+  export type CallSumAggregateOutputType = {
+    duration: number | null
+  }
+
+  export type CallMinAggregateOutputType = {
+    id: string | null
+    callerId: string | null
+    receiverId: string | null
+    status: $Enums.CallStatus | null
+    startedAt: Date | null
+    endedAt: Date | null
+    duration: number | null
+  }
+
+  export type CallMaxAggregateOutputType = {
+    id: string | null
+    callerId: string | null
+    receiverId: string | null
+    status: $Enums.CallStatus | null
+    startedAt: Date | null
+    endedAt: Date | null
+    duration: number | null
+  }
+
+  export type CallCountAggregateOutputType = {
+    id: number
+    callerId: number
+    receiverId: number
+    status: number
+    startedAt: number
+    endedAt: number
+    duration: number
+    _all: number
+  }
+
+
+  export type CallAvgAggregateInputType = {
+    duration?: true
+  }
+
+  export type CallSumAggregateInputType = {
+    duration?: true
+  }
+
+  export type CallMinAggregateInputType = {
+    id?: true
+    callerId?: true
+    receiverId?: true
+    status?: true
+    startedAt?: true
+    endedAt?: true
+    duration?: true
+  }
+
+  export type CallMaxAggregateInputType = {
+    id?: true
+    callerId?: true
+    receiverId?: true
+    status?: true
+    startedAt?: true
+    endedAt?: true
+    duration?: true
+  }
+
+  export type CallCountAggregateInputType = {
+    id?: true
+    callerId?: true
+    receiverId?: true
+    status?: true
+    startedAt?: true
+    endedAt?: true
+    duration?: true
+    _all?: true
+  }
+
+  export type CallAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Call to aggregate.
+     */
+    where?: CallWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Calls to fetch.
+     */
+    orderBy?: CallOrderByWithRelationInput | CallOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: CallWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Calls from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Calls.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Calls
+    **/
+    _count?: true | CallCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: CallAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: CallSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: CallMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: CallMaxAggregateInputType
+  }
+
+  export type GetCallAggregateType<T extends CallAggregateArgs> = {
+        [P in keyof T & keyof AggregateCall]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCall[P]>
+      : GetScalarType<T[P], AggregateCall[P]>
+  }
+
+
+
+
+  export type CallGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CallWhereInput
+    orderBy?: CallOrderByWithAggregationInput | CallOrderByWithAggregationInput[]
+    by: CallScalarFieldEnum[] | CallScalarFieldEnum
+    having?: CallScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: CallCountAggregateInputType | true
+    _avg?: CallAvgAggregateInputType
+    _sum?: CallSumAggregateInputType
+    _min?: CallMinAggregateInputType
+    _max?: CallMaxAggregateInputType
+  }
+
+  export type CallGroupByOutputType = {
+    id: string
+    callerId: string
+    receiverId: string
+    status: $Enums.CallStatus
+    startedAt: Date
+    endedAt: Date | null
+    duration: number | null
+    _count: CallCountAggregateOutputType | null
+    _avg: CallAvgAggregateOutputType | null
+    _sum: CallSumAggregateOutputType | null
+    _min: CallMinAggregateOutputType | null
+    _max: CallMaxAggregateOutputType | null
+  }
+
+  type GetCallGroupByPayload<T extends CallGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<CallGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof CallGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], CallGroupByOutputType[P]>
+            : GetScalarType<T[P], CallGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type CallSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    callerId?: boolean
+    receiverId?: boolean
+    status?: boolean
+    startedAt?: boolean
+    endedAt?: boolean
+    duration?: boolean
+    caller?: boolean | UserDefaultArgs<ExtArgs>
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["call"]>
+
+  export type CallSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    callerId?: boolean
+    receiverId?: boolean
+    status?: boolean
+    startedAt?: boolean
+    endedAt?: boolean
+    duration?: boolean
+    caller?: boolean | UserDefaultArgs<ExtArgs>
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["call"]>
+
+  export type CallSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    callerId?: boolean
+    receiverId?: boolean
+    status?: boolean
+    startedAt?: boolean
+    endedAt?: boolean
+    duration?: boolean
+    caller?: boolean | UserDefaultArgs<ExtArgs>
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["call"]>
+
+  export type CallSelectScalar = {
+    id?: boolean
+    callerId?: boolean
+    receiverId?: boolean
+    status?: boolean
+    startedAt?: boolean
+    endedAt?: boolean
+    duration?: boolean
+  }
+
+  export type CallOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "callerId" | "receiverId" | "status" | "startedAt" | "endedAt" | "duration", ExtArgs["result"]["call"]>
+  export type CallInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    caller?: boolean | UserDefaultArgs<ExtArgs>
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type CallIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    caller?: boolean | UserDefaultArgs<ExtArgs>
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type CallIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    caller?: boolean | UserDefaultArgs<ExtArgs>
+    receiver?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $CallPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Call"
+    objects: {
+      caller: Prisma.$UserPayload<ExtArgs>
+      receiver: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      callerId: string
+      receiverId: string
+      status: $Enums.CallStatus
+      startedAt: Date
+      endedAt: Date | null
+      duration: number | null
+    }, ExtArgs["result"]["call"]>
+    composites: {}
+  }
+
+  type CallGetPayload<S extends boolean | null | undefined | CallDefaultArgs> = $Result.GetResult<Prisma.$CallPayload, S>
+
+  type CallCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<CallFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: CallCountAggregateInputType | true
+    }
+
+  export interface CallDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Call'], meta: { name: 'Call' } }
+    /**
+     * Find zero or one Call that matches the filter.
+     * @param {CallFindUniqueArgs} args - Arguments to find a Call
+     * @example
+     * // Get one Call
+     * const call = await prisma.call.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends CallFindUniqueArgs>(args: SelectSubset<T, CallFindUniqueArgs<ExtArgs>>): Prisma__CallClient<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Call that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {CallFindUniqueOrThrowArgs} args - Arguments to find a Call
+     * @example
+     * // Get one Call
+     * const call = await prisma.call.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends CallFindUniqueOrThrowArgs>(args: SelectSubset<T, CallFindUniqueOrThrowArgs<ExtArgs>>): Prisma__CallClient<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Call that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CallFindFirstArgs} args - Arguments to find a Call
+     * @example
+     * // Get one Call
+     * const call = await prisma.call.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends CallFindFirstArgs>(args?: SelectSubset<T, CallFindFirstArgs<ExtArgs>>): Prisma__CallClient<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Call that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CallFindFirstOrThrowArgs} args - Arguments to find a Call
+     * @example
+     * // Get one Call
+     * const call = await prisma.call.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends CallFindFirstOrThrowArgs>(args?: SelectSubset<T, CallFindFirstOrThrowArgs<ExtArgs>>): Prisma__CallClient<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Calls that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CallFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Calls
+     * const calls = await prisma.call.findMany()
+     * 
+     * // Get first 10 Calls
+     * const calls = await prisma.call.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const callWithIdOnly = await prisma.call.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends CallFindManyArgs>(args?: SelectSubset<T, CallFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Call.
+     * @param {CallCreateArgs} args - Arguments to create a Call.
+     * @example
+     * // Create one Call
+     * const Call = await prisma.call.create({
+     *   data: {
+     *     // ... data to create a Call
+     *   }
+     * })
+     * 
+     */
+    create<T extends CallCreateArgs>(args: SelectSubset<T, CallCreateArgs<ExtArgs>>): Prisma__CallClient<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Calls.
+     * @param {CallCreateManyArgs} args - Arguments to create many Calls.
+     * @example
+     * // Create many Calls
+     * const call = await prisma.call.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends CallCreateManyArgs>(args?: SelectSubset<T, CallCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Calls and returns the data saved in the database.
+     * @param {CallCreateManyAndReturnArgs} args - Arguments to create many Calls.
+     * @example
+     * // Create many Calls
+     * const call = await prisma.call.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Calls and only return the `id`
+     * const callWithIdOnly = await prisma.call.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends CallCreateManyAndReturnArgs>(args?: SelectSubset<T, CallCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Call.
+     * @param {CallDeleteArgs} args - Arguments to delete one Call.
+     * @example
+     * // Delete one Call
+     * const Call = await prisma.call.delete({
+     *   where: {
+     *     // ... filter to delete one Call
+     *   }
+     * })
+     * 
+     */
+    delete<T extends CallDeleteArgs>(args: SelectSubset<T, CallDeleteArgs<ExtArgs>>): Prisma__CallClient<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Call.
+     * @param {CallUpdateArgs} args - Arguments to update one Call.
+     * @example
+     * // Update one Call
+     * const call = await prisma.call.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends CallUpdateArgs>(args: SelectSubset<T, CallUpdateArgs<ExtArgs>>): Prisma__CallClient<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Calls.
+     * @param {CallDeleteManyArgs} args - Arguments to filter Calls to delete.
+     * @example
+     * // Delete a few Calls
+     * const { count } = await prisma.call.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends CallDeleteManyArgs>(args?: SelectSubset<T, CallDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Calls.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CallUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Calls
+     * const call = await prisma.call.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends CallUpdateManyArgs>(args: SelectSubset<T, CallUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Calls and returns the data updated in the database.
+     * @param {CallUpdateManyAndReturnArgs} args - Arguments to update many Calls.
+     * @example
+     * // Update many Calls
+     * const call = await prisma.call.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Calls and only return the `id`
+     * const callWithIdOnly = await prisma.call.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends CallUpdateManyAndReturnArgs>(args: SelectSubset<T, CallUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Call.
+     * @param {CallUpsertArgs} args - Arguments to update or create a Call.
+     * @example
+     * // Update or create a Call
+     * const call = await prisma.call.upsert({
+     *   create: {
+     *     // ... data to create a Call
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Call we want to update
+     *   }
+     * })
+     */
+    upsert<T extends CallUpsertArgs>(args: SelectSubset<T, CallUpsertArgs<ExtArgs>>): Prisma__CallClient<$Result.GetResult<Prisma.$CallPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Calls.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CallCountArgs} args - Arguments to filter Calls to count.
+     * @example
+     * // Count the number of Calls
+     * const count = await prisma.call.count({
+     *   where: {
+     *     // ... the filter for the Calls we want to count
+     *   }
+     * })
+    **/
+    count<T extends CallCountArgs>(
+      args?: Subset<T, CallCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], CallCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Call.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CallAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends CallAggregateArgs>(args: Subset<T, CallAggregateArgs>): Prisma.PrismaPromise<GetCallAggregateType<T>>
+
+    /**
+     * Group by Call.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CallGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends CallGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: CallGroupByArgs['orderBy'] }
+        : { orderBy?: CallGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, CallGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCallGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Call model
+   */
+  readonly fields: CallFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Call.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__CallClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    caller<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    receiver<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Call model
+   */
+  interface CallFieldRefs {
+    readonly id: FieldRef<"Call", 'String'>
+    readonly callerId: FieldRef<"Call", 'String'>
+    readonly receiverId: FieldRef<"Call", 'String'>
+    readonly status: FieldRef<"Call", 'CallStatus'>
+    readonly startedAt: FieldRef<"Call", 'DateTime'>
+    readonly endedAt: FieldRef<"Call", 'DateTime'>
+    readonly duration: FieldRef<"Call", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Call findUnique
+   */
+  export type CallFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+    /**
+     * Filter, which Call to fetch.
+     */
+    where: CallWhereUniqueInput
+  }
+
+  /**
+   * Call findUniqueOrThrow
+   */
+  export type CallFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+    /**
+     * Filter, which Call to fetch.
+     */
+    where: CallWhereUniqueInput
+  }
+
+  /**
+   * Call findFirst
+   */
+  export type CallFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+    /**
+     * Filter, which Call to fetch.
+     */
+    where?: CallWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Calls to fetch.
+     */
+    orderBy?: CallOrderByWithRelationInput | CallOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Calls.
+     */
+    cursor?: CallWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Calls from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Calls.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Calls.
+     */
+    distinct?: CallScalarFieldEnum | CallScalarFieldEnum[]
+  }
+
+  /**
+   * Call findFirstOrThrow
+   */
+  export type CallFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+    /**
+     * Filter, which Call to fetch.
+     */
+    where?: CallWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Calls to fetch.
+     */
+    orderBy?: CallOrderByWithRelationInput | CallOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Calls.
+     */
+    cursor?: CallWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Calls from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Calls.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Calls.
+     */
+    distinct?: CallScalarFieldEnum | CallScalarFieldEnum[]
+  }
+
+  /**
+   * Call findMany
+   */
+  export type CallFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+    /**
+     * Filter, which Calls to fetch.
+     */
+    where?: CallWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Calls to fetch.
+     */
+    orderBy?: CallOrderByWithRelationInput | CallOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Calls.
+     */
+    cursor?: CallWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Calls from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Calls.
+     */
+    skip?: number
+    distinct?: CallScalarFieldEnum | CallScalarFieldEnum[]
+  }
+
+  /**
+   * Call create
+   */
+  export type CallCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Call.
+     */
+    data: XOR<CallCreateInput, CallUncheckedCreateInput>
+  }
+
+  /**
+   * Call createMany
+   */
+  export type CallCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Calls.
+     */
+    data: CallCreateManyInput | CallCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Call createManyAndReturn
+   */
+  export type CallCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * The data used to create many Calls.
+     */
+    data: CallCreateManyInput | CallCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Call update
+   */
+  export type CallUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Call.
+     */
+    data: XOR<CallUpdateInput, CallUncheckedUpdateInput>
+    /**
+     * Choose, which Call to update.
+     */
+    where: CallWhereUniqueInput
+  }
+
+  /**
+   * Call updateMany
+   */
+  export type CallUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Calls.
+     */
+    data: XOR<CallUpdateManyMutationInput, CallUncheckedUpdateManyInput>
+    /**
+     * Filter which Calls to update
+     */
+    where?: CallWhereInput
+    /**
+     * Limit how many Calls to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Call updateManyAndReturn
+   */
+  export type CallUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * The data used to update Calls.
+     */
+    data: XOR<CallUpdateManyMutationInput, CallUncheckedUpdateManyInput>
+    /**
+     * Filter which Calls to update
+     */
+    where?: CallWhereInput
+    /**
+     * Limit how many Calls to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Call upsert
+   */
+  export type CallUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Call to update in case it exists.
+     */
+    where: CallWhereUniqueInput
+    /**
+     * In case the Call found by the `where` argument doesn't exist, create a new Call with this data.
+     */
+    create: XOR<CallCreateInput, CallUncheckedCreateInput>
+    /**
+     * In case the Call was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<CallUpdateInput, CallUncheckedUpdateInput>
+  }
+
+  /**
+   * Call delete
+   */
+  export type CallDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+    /**
+     * Filter which Call to delete.
+     */
+    where: CallWhereUniqueInput
+  }
+
+  /**
+   * Call deleteMany
+   */
+  export type CallDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Calls to delete
+     */
+    where?: CallWhereInput
+    /**
+     * Limit how many Calls to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Call without action
+   */
+  export type CallDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Call
+     */
+    select?: CallSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Call
+     */
+    omit?: CallOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CallInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -8349,6 +9655,19 @@ export namespace Prisma {
   export type GroupScalarFieldEnum = (typeof GroupScalarFieldEnum)[keyof typeof GroupScalarFieldEnum]
 
 
+  export const CallScalarFieldEnum: {
+    id: 'id',
+    callerId: 'callerId',
+    receiverId: 'receiverId',
+    status: 'status',
+    startedAt: 'startedAt',
+    endedAt: 'endedAt',
+    duration: 'duration'
+  };
+
+  export type CallScalarFieldEnum = (typeof CallScalarFieldEnum)[keyof typeof CallScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -8428,6 +9747,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'CallStatus'
+   */
+  export type EnumCallStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CallStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'CallStatus[]'
+   */
+  export type ListEnumCallStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'CallStatus[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Int'
    */
   export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -8438,6 +9771,20 @@ export namespace Prisma {
    * Reference to a field of type 'Int[]'
    */
   export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float[]'
+   */
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
   /**
    * Deep Input Types
@@ -8464,6 +9811,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantListRelationFilter
     createdGroups?: GroupListRelationFilter
     MessageRead?: MessageReadListRelationFilter
+    callsInitiated?: CallListRelationFilter
+    callsReceived?: CallListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -8483,6 +9832,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantOrderByRelationAggregateInput
     createdGroups?: GroupOrderByRelationAggregateInput
     MessageRead?: MessageReadOrderByRelationAggregateInput
+    callsInitiated?: CallOrderByRelationAggregateInput
+    callsReceived?: CallOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -8505,6 +9856,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantListRelationFilter
     createdGroups?: GroupListRelationFilter
     MessageRead?: MessageReadListRelationFilter
+    callsInitiated?: CallListRelationFilter
+    callsReceived?: CallListRelationFilter
   }, "id" | "email" | "googleId">
 
   export type UserOrderByWithAggregationInput = {
@@ -8871,6 +10224,76 @@ export namespace Prisma {
     creatorId?: StringWithAggregatesFilter<"Group"> | string
   }
 
+  export type CallWhereInput = {
+    AND?: CallWhereInput | CallWhereInput[]
+    OR?: CallWhereInput[]
+    NOT?: CallWhereInput | CallWhereInput[]
+    id?: StringFilter<"Call"> | string
+    callerId?: StringFilter<"Call"> | string
+    receiverId?: StringFilter<"Call"> | string
+    status?: EnumCallStatusFilter<"Call"> | $Enums.CallStatus
+    startedAt?: DateTimeFilter<"Call"> | Date | string
+    endedAt?: DateTimeNullableFilter<"Call"> | Date | string | null
+    duration?: IntNullableFilter<"Call"> | number | null
+    caller?: XOR<UserScalarRelationFilter, UserWhereInput>
+    receiver?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type CallOrderByWithRelationInput = {
+    id?: SortOrder
+    callerId?: SortOrder
+    receiverId?: SortOrder
+    status?: SortOrder
+    startedAt?: SortOrder
+    endedAt?: SortOrderInput | SortOrder
+    duration?: SortOrderInput | SortOrder
+    caller?: UserOrderByWithRelationInput
+    receiver?: UserOrderByWithRelationInput
+  }
+
+  export type CallWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: CallWhereInput | CallWhereInput[]
+    OR?: CallWhereInput[]
+    NOT?: CallWhereInput | CallWhereInput[]
+    callerId?: StringFilter<"Call"> | string
+    receiverId?: StringFilter<"Call"> | string
+    status?: EnumCallStatusFilter<"Call"> | $Enums.CallStatus
+    startedAt?: DateTimeFilter<"Call"> | Date | string
+    endedAt?: DateTimeNullableFilter<"Call"> | Date | string | null
+    duration?: IntNullableFilter<"Call"> | number | null
+    caller?: XOR<UserScalarRelationFilter, UserWhereInput>
+    receiver?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type CallOrderByWithAggregationInput = {
+    id?: SortOrder
+    callerId?: SortOrder
+    receiverId?: SortOrder
+    status?: SortOrder
+    startedAt?: SortOrder
+    endedAt?: SortOrderInput | SortOrder
+    duration?: SortOrderInput | SortOrder
+    _count?: CallCountOrderByAggregateInput
+    _avg?: CallAvgOrderByAggregateInput
+    _max?: CallMaxOrderByAggregateInput
+    _min?: CallMinOrderByAggregateInput
+    _sum?: CallSumOrderByAggregateInput
+  }
+
+  export type CallScalarWhereWithAggregatesInput = {
+    AND?: CallScalarWhereWithAggregatesInput | CallScalarWhereWithAggregatesInput[]
+    OR?: CallScalarWhereWithAggregatesInput[]
+    NOT?: CallScalarWhereWithAggregatesInput | CallScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Call"> | string
+    callerId?: StringWithAggregatesFilter<"Call"> | string
+    receiverId?: StringWithAggregatesFilter<"Call"> | string
+    status?: EnumCallStatusWithAggregatesFilter<"Call"> | $Enums.CallStatus
+    startedAt?: DateTimeWithAggregatesFilter<"Call"> | Date | string
+    endedAt?: DateTimeNullableWithAggregatesFilter<"Call"> | Date | string | null
+    duration?: IntNullableWithAggregatesFilter<"Call"> | number | null
+  }
+
   export type UserCreateInput = {
     id?: string
     firstName: string
@@ -8888,6 +10311,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantCreateNestedManyWithoutUserInput
     createdGroups?: GroupCreateNestedManyWithoutCreatorInput
     MessageRead?: MessageReadCreateNestedManyWithoutUserInput
+    callsInitiated?: CallCreateNestedManyWithoutCallerInput
+    callsReceived?: CallCreateNestedManyWithoutReceiverInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -8907,6 +10332,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
     createdGroups?: GroupUncheckedCreateNestedManyWithoutCreatorInput
     MessageRead?: MessageReadUncheckedCreateNestedManyWithoutUserInput
+    callsInitiated?: CallUncheckedCreateNestedManyWithoutCallerInput
+    callsReceived?: CallUncheckedCreateNestedManyWithoutReceiverInput
   }
 
   export type UserUpdateInput = {
@@ -8926,6 +10353,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantUpdateManyWithoutUserNestedInput
     createdGroups?: GroupUpdateManyWithoutCreatorNestedInput
     MessageRead?: MessageReadUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUpdateManyWithoutReceiverNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -8945,6 +10374,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
     createdGroups?: GroupUncheckedUpdateManyWithoutCreatorNestedInput
     MessageRead?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUncheckedUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUncheckedUpdateManyWithoutReceiverNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -9318,6 +10749,74 @@ export namespace Prisma {
     creatorId?: StringFieldUpdateOperationsInput | string
   }
 
+  export type CallCreateInput = {
+    id?: string
+    status: $Enums.CallStatus
+    startedAt?: Date | string
+    endedAt?: Date | string | null
+    duration?: number | null
+    caller: UserCreateNestedOneWithoutCallsInitiatedInput
+    receiver: UserCreateNestedOneWithoutCallsReceivedInput
+  }
+
+  export type CallUncheckedCreateInput = {
+    id?: string
+    callerId: string
+    receiverId: string
+    status: $Enums.CallStatus
+    startedAt?: Date | string
+    endedAt?: Date | string | null
+    duration?: number | null
+  }
+
+  export type CallUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    duration?: NullableIntFieldUpdateOperationsInput | number | null
+    caller?: UserUpdateOneRequiredWithoutCallsInitiatedNestedInput
+    receiver?: UserUpdateOneRequiredWithoutCallsReceivedNestedInput
+  }
+
+  export type CallUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    callerId?: StringFieldUpdateOperationsInput | string
+    receiverId?: StringFieldUpdateOperationsInput | string
+    status?: EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    duration?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type CallCreateManyInput = {
+    id?: string
+    callerId: string
+    receiverId: string
+    status: $Enums.CallStatus
+    startedAt?: Date | string
+    endedAt?: Date | string | null
+    duration?: number | null
+  }
+
+  export type CallUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    duration?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type CallUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    callerId?: StringFieldUpdateOperationsInput | string
+    receiverId?: StringFieldUpdateOperationsInput | string
+    status?: EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    duration?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -9388,6 +10887,12 @@ export namespace Prisma {
     none?: MessageReadWhereInput
   }
 
+  export type CallListRelationFilter = {
+    every?: CallWhereInput
+    some?: CallWhereInput
+    none?: CallWhereInput
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
@@ -9406,6 +10911,10 @@ export namespace Prisma {
   }
 
   export type MessageReadOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type CallOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -9725,6 +11234,88 @@ export namespace Prisma {
     creatorId?: SortOrder
   }
 
+  export type EnumCallStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.CallStatus | EnumCallStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.CallStatus[] | ListEnumCallStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.CallStatus[] | ListEnumCallStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumCallStatusFilter<$PrismaModel> | $Enums.CallStatus
+  }
+
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type CallCountOrderByAggregateInput = {
+    id?: SortOrder
+    callerId?: SortOrder
+    receiverId?: SortOrder
+    status?: SortOrder
+    startedAt?: SortOrder
+    endedAt?: SortOrder
+    duration?: SortOrder
+  }
+
+  export type CallAvgOrderByAggregateInput = {
+    duration?: SortOrder
+  }
+
+  export type CallMaxOrderByAggregateInput = {
+    id?: SortOrder
+    callerId?: SortOrder
+    receiverId?: SortOrder
+    status?: SortOrder
+    startedAt?: SortOrder
+    endedAt?: SortOrder
+    duration?: SortOrder
+  }
+
+  export type CallMinOrderByAggregateInput = {
+    id?: SortOrder
+    callerId?: SortOrder
+    receiverId?: SortOrder
+    status?: SortOrder
+    startedAt?: SortOrder
+    endedAt?: SortOrder
+    duration?: SortOrder
+  }
+
+  export type CallSumOrderByAggregateInput = {
+    duration?: SortOrder
+  }
+
+  export type EnumCallStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.CallStatus | EnumCallStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.CallStatus[] | ListEnumCallStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.CallStatus[] | ListEnumCallStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumCallStatusWithAggregatesFilter<$PrismaModel> | $Enums.CallStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumCallStatusFilter<$PrismaModel>
+    _max?: NestedEnumCallStatusFilter<$PrismaModel>
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
   export type MessageCreateNestedManyWithoutSenderInput = {
     create?: XOR<MessageCreateWithoutSenderInput, MessageUncheckedCreateWithoutSenderInput> | MessageCreateWithoutSenderInput[] | MessageUncheckedCreateWithoutSenderInput[]
     connectOrCreate?: MessageCreateOrConnectWithoutSenderInput | MessageCreateOrConnectWithoutSenderInput[]
@@ -9760,6 +11351,20 @@ export namespace Prisma {
     connect?: MessageReadWhereUniqueInput | MessageReadWhereUniqueInput[]
   }
 
+  export type CallCreateNestedManyWithoutCallerInput = {
+    create?: XOR<CallCreateWithoutCallerInput, CallUncheckedCreateWithoutCallerInput> | CallCreateWithoutCallerInput[] | CallUncheckedCreateWithoutCallerInput[]
+    connectOrCreate?: CallCreateOrConnectWithoutCallerInput | CallCreateOrConnectWithoutCallerInput[]
+    createMany?: CallCreateManyCallerInputEnvelope
+    connect?: CallWhereUniqueInput | CallWhereUniqueInput[]
+  }
+
+  export type CallCreateNestedManyWithoutReceiverInput = {
+    create?: XOR<CallCreateWithoutReceiverInput, CallUncheckedCreateWithoutReceiverInput> | CallCreateWithoutReceiverInput[] | CallUncheckedCreateWithoutReceiverInput[]
+    connectOrCreate?: CallCreateOrConnectWithoutReceiverInput | CallCreateOrConnectWithoutReceiverInput[]
+    createMany?: CallCreateManyReceiverInputEnvelope
+    connect?: CallWhereUniqueInput | CallWhereUniqueInput[]
+  }
+
   export type MessageUncheckedCreateNestedManyWithoutSenderInput = {
     create?: XOR<MessageCreateWithoutSenderInput, MessageUncheckedCreateWithoutSenderInput> | MessageCreateWithoutSenderInput[] | MessageUncheckedCreateWithoutSenderInput[]
     connectOrCreate?: MessageCreateOrConnectWithoutSenderInput | MessageCreateOrConnectWithoutSenderInput[]
@@ -9793,6 +11398,20 @@ export namespace Prisma {
     connectOrCreate?: MessageReadCreateOrConnectWithoutUserInput | MessageReadCreateOrConnectWithoutUserInput[]
     createMany?: MessageReadCreateManyUserInputEnvelope
     connect?: MessageReadWhereUniqueInput | MessageReadWhereUniqueInput[]
+  }
+
+  export type CallUncheckedCreateNestedManyWithoutCallerInput = {
+    create?: XOR<CallCreateWithoutCallerInput, CallUncheckedCreateWithoutCallerInput> | CallCreateWithoutCallerInput[] | CallUncheckedCreateWithoutCallerInput[]
+    connectOrCreate?: CallCreateOrConnectWithoutCallerInput | CallCreateOrConnectWithoutCallerInput[]
+    createMany?: CallCreateManyCallerInputEnvelope
+    connect?: CallWhereUniqueInput | CallWhereUniqueInput[]
+  }
+
+  export type CallUncheckedCreateNestedManyWithoutReceiverInput = {
+    create?: XOR<CallCreateWithoutReceiverInput, CallUncheckedCreateWithoutReceiverInput> | CallCreateWithoutReceiverInput[] | CallUncheckedCreateWithoutReceiverInput[]
+    connectOrCreate?: CallCreateOrConnectWithoutReceiverInput | CallCreateOrConnectWithoutReceiverInput[]
+    createMany?: CallCreateManyReceiverInputEnvelope
+    connect?: CallWhereUniqueInput | CallWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -9881,6 +11500,34 @@ export namespace Prisma {
     deleteMany?: MessageReadScalarWhereInput | MessageReadScalarWhereInput[]
   }
 
+  export type CallUpdateManyWithoutCallerNestedInput = {
+    create?: XOR<CallCreateWithoutCallerInput, CallUncheckedCreateWithoutCallerInput> | CallCreateWithoutCallerInput[] | CallUncheckedCreateWithoutCallerInput[]
+    connectOrCreate?: CallCreateOrConnectWithoutCallerInput | CallCreateOrConnectWithoutCallerInput[]
+    upsert?: CallUpsertWithWhereUniqueWithoutCallerInput | CallUpsertWithWhereUniqueWithoutCallerInput[]
+    createMany?: CallCreateManyCallerInputEnvelope
+    set?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    disconnect?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    delete?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    connect?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    update?: CallUpdateWithWhereUniqueWithoutCallerInput | CallUpdateWithWhereUniqueWithoutCallerInput[]
+    updateMany?: CallUpdateManyWithWhereWithoutCallerInput | CallUpdateManyWithWhereWithoutCallerInput[]
+    deleteMany?: CallScalarWhereInput | CallScalarWhereInput[]
+  }
+
+  export type CallUpdateManyWithoutReceiverNestedInput = {
+    create?: XOR<CallCreateWithoutReceiverInput, CallUncheckedCreateWithoutReceiverInput> | CallCreateWithoutReceiverInput[] | CallUncheckedCreateWithoutReceiverInput[]
+    connectOrCreate?: CallCreateOrConnectWithoutReceiverInput | CallCreateOrConnectWithoutReceiverInput[]
+    upsert?: CallUpsertWithWhereUniqueWithoutReceiverInput | CallUpsertWithWhereUniqueWithoutReceiverInput[]
+    createMany?: CallCreateManyReceiverInputEnvelope
+    set?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    disconnect?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    delete?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    connect?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    update?: CallUpdateWithWhereUniqueWithoutReceiverInput | CallUpdateWithWhereUniqueWithoutReceiverInput[]
+    updateMany?: CallUpdateManyWithWhereWithoutReceiverInput | CallUpdateManyWithWhereWithoutReceiverInput[]
+    deleteMany?: CallScalarWhereInput | CallScalarWhereInput[]
+  }
+
   export type MessageUncheckedUpdateManyWithoutSenderNestedInput = {
     create?: XOR<MessageCreateWithoutSenderInput, MessageUncheckedCreateWithoutSenderInput> | MessageCreateWithoutSenderInput[] | MessageUncheckedCreateWithoutSenderInput[]
     connectOrCreate?: MessageCreateOrConnectWithoutSenderInput | MessageCreateOrConnectWithoutSenderInput[]
@@ -9949,6 +11596,34 @@ export namespace Prisma {
     update?: MessageReadUpdateWithWhereUniqueWithoutUserInput | MessageReadUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: MessageReadUpdateManyWithWhereWithoutUserInput | MessageReadUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: MessageReadScalarWhereInput | MessageReadScalarWhereInput[]
+  }
+
+  export type CallUncheckedUpdateManyWithoutCallerNestedInput = {
+    create?: XOR<CallCreateWithoutCallerInput, CallUncheckedCreateWithoutCallerInput> | CallCreateWithoutCallerInput[] | CallUncheckedCreateWithoutCallerInput[]
+    connectOrCreate?: CallCreateOrConnectWithoutCallerInput | CallCreateOrConnectWithoutCallerInput[]
+    upsert?: CallUpsertWithWhereUniqueWithoutCallerInput | CallUpsertWithWhereUniqueWithoutCallerInput[]
+    createMany?: CallCreateManyCallerInputEnvelope
+    set?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    disconnect?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    delete?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    connect?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    update?: CallUpdateWithWhereUniqueWithoutCallerInput | CallUpdateWithWhereUniqueWithoutCallerInput[]
+    updateMany?: CallUpdateManyWithWhereWithoutCallerInput | CallUpdateManyWithWhereWithoutCallerInput[]
+    deleteMany?: CallScalarWhereInput | CallScalarWhereInput[]
+  }
+
+  export type CallUncheckedUpdateManyWithoutReceiverNestedInput = {
+    create?: XOR<CallCreateWithoutReceiverInput, CallUncheckedCreateWithoutReceiverInput> | CallCreateWithoutReceiverInput[] | CallUncheckedCreateWithoutReceiverInput[]
+    connectOrCreate?: CallCreateOrConnectWithoutReceiverInput | CallCreateOrConnectWithoutReceiverInput[]
+    upsert?: CallUpsertWithWhereUniqueWithoutReceiverInput | CallUpsertWithWhereUniqueWithoutReceiverInput[]
+    createMany?: CallCreateManyReceiverInputEnvelope
+    set?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    disconnect?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    delete?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    connect?: CallWhereUniqueInput | CallWhereUniqueInput[]
+    update?: CallUpdateWithWhereUniqueWithoutReceiverInput | CallUpdateWithWhereUniqueWithoutReceiverInput[]
+    updateMany?: CallUpdateManyWithWhereWithoutReceiverInput | CallUpdateManyWithWhereWithoutReceiverInput[]
+    deleteMany?: CallScalarWhereInput | CallScalarWhereInput[]
   }
 
   export type ConversationParticipantCreateNestedManyWithoutConversationInput = {
@@ -10254,6 +11929,46 @@ export namespace Prisma {
     update?: XOR<XOR<ConversationUpdateToOneWithWhereWithoutGroupInput, ConversationUpdateWithoutGroupInput>, ConversationUncheckedUpdateWithoutGroupInput>
   }
 
+  export type UserCreateNestedOneWithoutCallsInitiatedInput = {
+    create?: XOR<UserCreateWithoutCallsInitiatedInput, UserUncheckedCreateWithoutCallsInitiatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCallsInitiatedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutCallsReceivedInput = {
+    create?: XOR<UserCreateWithoutCallsReceivedInput, UserUncheckedCreateWithoutCallsReceivedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCallsReceivedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumCallStatusFieldUpdateOperationsInput = {
+    set?: $Enums.CallStatus
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type UserUpdateOneRequiredWithoutCallsInitiatedNestedInput = {
+    create?: XOR<UserCreateWithoutCallsInitiatedInput, UserUncheckedCreateWithoutCallsInitiatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCallsInitiatedInput
+    upsert?: UserUpsertWithoutCallsInitiatedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCallsInitiatedInput, UserUpdateWithoutCallsInitiatedInput>, UserUncheckedUpdateWithoutCallsInitiatedInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutCallsReceivedNestedInput = {
+    create?: XOR<UserCreateWithoutCallsReceivedInput, UserUncheckedCreateWithoutCallsReceivedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutCallsReceivedInput
+    upsert?: UserUpsertWithoutCallsReceivedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCallsReceivedInput, UserUpdateWithoutCallsReceivedInput>, UserUncheckedUpdateWithoutCallsReceivedInput>
+  }
+
   export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -10418,6 +12133,50 @@ export namespace Prisma {
     _max?: NestedEnumMessageTypeFilter<$PrismaModel>
   }
 
+  export type NestedEnumCallStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.CallStatus | EnumCallStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.CallStatus[] | ListEnumCallStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.CallStatus[] | ListEnumCallStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumCallStatusFilter<$PrismaModel> | $Enums.CallStatus
+  }
+
+  export type NestedEnumCallStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.CallStatus | EnumCallStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.CallStatus[] | ListEnumCallStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.CallStatus[] | ListEnumCallStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumCallStatusWithAggregatesFilter<$PrismaModel> | $Enums.CallStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumCallStatusFilter<$PrismaModel>
+    _max?: NestedEnumCallStatusFilter<$PrismaModel>
+  }
+
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type MessageCreateWithoutSenderInput = {
     id?: string
     content: string
@@ -10564,6 +12323,62 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type CallCreateWithoutCallerInput = {
+    id?: string
+    status: $Enums.CallStatus
+    startedAt?: Date | string
+    endedAt?: Date | string | null
+    duration?: number | null
+    receiver: UserCreateNestedOneWithoutCallsReceivedInput
+  }
+
+  export type CallUncheckedCreateWithoutCallerInput = {
+    id?: string
+    receiverId: string
+    status: $Enums.CallStatus
+    startedAt?: Date | string
+    endedAt?: Date | string | null
+    duration?: number | null
+  }
+
+  export type CallCreateOrConnectWithoutCallerInput = {
+    where: CallWhereUniqueInput
+    create: XOR<CallCreateWithoutCallerInput, CallUncheckedCreateWithoutCallerInput>
+  }
+
+  export type CallCreateManyCallerInputEnvelope = {
+    data: CallCreateManyCallerInput | CallCreateManyCallerInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type CallCreateWithoutReceiverInput = {
+    id?: string
+    status: $Enums.CallStatus
+    startedAt?: Date | string
+    endedAt?: Date | string | null
+    duration?: number | null
+    caller: UserCreateNestedOneWithoutCallsInitiatedInput
+  }
+
+  export type CallUncheckedCreateWithoutReceiverInput = {
+    id?: string
+    callerId: string
+    status: $Enums.CallStatus
+    startedAt?: Date | string
+    endedAt?: Date | string | null
+    duration?: number | null
+  }
+
+  export type CallCreateOrConnectWithoutReceiverInput = {
+    where: CallWhereUniqueInput
+    create: XOR<CallCreateWithoutReceiverInput, CallUncheckedCreateWithoutReceiverInput>
+  }
+
+  export type CallCreateManyReceiverInputEnvelope = {
+    data: CallCreateManyReceiverInput | CallCreateManyReceiverInput[]
+    skipDuplicates?: boolean
+  }
+
   export type MessageUpsertWithWhereUniqueWithoutSenderInput = {
     where: MessageWhereUniqueInput
     update: XOR<MessageUpdateWithoutSenderInput, MessageUncheckedUpdateWithoutSenderInput>
@@ -10692,6 +12507,51 @@ export namespace Prisma {
     messageId?: StringFilter<"MessageRead"> | string
     userId?: StringFilter<"MessageRead"> | string
     readAt?: DateTimeFilter<"MessageRead"> | Date | string
+  }
+
+  export type CallUpsertWithWhereUniqueWithoutCallerInput = {
+    where: CallWhereUniqueInput
+    update: XOR<CallUpdateWithoutCallerInput, CallUncheckedUpdateWithoutCallerInput>
+    create: XOR<CallCreateWithoutCallerInput, CallUncheckedCreateWithoutCallerInput>
+  }
+
+  export type CallUpdateWithWhereUniqueWithoutCallerInput = {
+    where: CallWhereUniqueInput
+    data: XOR<CallUpdateWithoutCallerInput, CallUncheckedUpdateWithoutCallerInput>
+  }
+
+  export type CallUpdateManyWithWhereWithoutCallerInput = {
+    where: CallScalarWhereInput
+    data: XOR<CallUpdateManyMutationInput, CallUncheckedUpdateManyWithoutCallerInput>
+  }
+
+  export type CallScalarWhereInput = {
+    AND?: CallScalarWhereInput | CallScalarWhereInput[]
+    OR?: CallScalarWhereInput[]
+    NOT?: CallScalarWhereInput | CallScalarWhereInput[]
+    id?: StringFilter<"Call"> | string
+    callerId?: StringFilter<"Call"> | string
+    receiverId?: StringFilter<"Call"> | string
+    status?: EnumCallStatusFilter<"Call"> | $Enums.CallStatus
+    startedAt?: DateTimeFilter<"Call"> | Date | string
+    endedAt?: DateTimeNullableFilter<"Call"> | Date | string | null
+    duration?: IntNullableFilter<"Call"> | number | null
+  }
+
+  export type CallUpsertWithWhereUniqueWithoutReceiverInput = {
+    where: CallWhereUniqueInput
+    update: XOR<CallUpdateWithoutReceiverInput, CallUncheckedUpdateWithoutReceiverInput>
+    create: XOR<CallCreateWithoutReceiverInput, CallUncheckedCreateWithoutReceiverInput>
+  }
+
+  export type CallUpdateWithWhereUniqueWithoutReceiverInput = {
+    where: CallWhereUniqueInput
+    data: XOR<CallUpdateWithoutReceiverInput, CallUncheckedUpdateWithoutReceiverInput>
+  }
+
+  export type CallUpdateManyWithWhereWithoutReceiverInput = {
+    where: CallScalarWhereInput
+    data: XOR<CallUpdateManyMutationInput, CallUncheckedUpdateManyWithoutReceiverInput>
   }
 
   export type ConversationParticipantCreateWithoutConversationInput = {
@@ -10854,6 +12714,8 @@ export namespace Prisma {
     receivedMessages?: MessageCreateNestedManyWithoutReceiverInput
     createdGroups?: GroupCreateNestedManyWithoutCreatorInput
     MessageRead?: MessageReadCreateNestedManyWithoutUserInput
+    callsInitiated?: CallCreateNestedManyWithoutCallerInput
+    callsReceived?: CallCreateNestedManyWithoutReceiverInput
   }
 
   export type UserUncheckedCreateWithoutConversationsInput = {
@@ -10872,6 +12734,8 @@ export namespace Prisma {
     receivedMessages?: MessageUncheckedCreateNestedManyWithoutReceiverInput
     createdGroups?: GroupUncheckedCreateNestedManyWithoutCreatorInput
     MessageRead?: MessageReadUncheckedCreateNestedManyWithoutUserInput
+    callsInitiated?: CallUncheckedCreateNestedManyWithoutCallerInput
+    callsReceived?: CallUncheckedCreateNestedManyWithoutReceiverInput
   }
 
   export type UserCreateOrConnectWithoutConversationsInput = {
@@ -10931,6 +12795,8 @@ export namespace Prisma {
     receivedMessages?: MessageUpdateManyWithoutReceiverNestedInput
     createdGroups?: GroupUpdateManyWithoutCreatorNestedInput
     MessageRead?: MessageReadUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUpdateManyWithoutReceiverNestedInput
   }
 
   export type UserUncheckedUpdateWithoutConversationsInput = {
@@ -10949,6 +12815,8 @@ export namespace Prisma {
     receivedMessages?: MessageUncheckedUpdateManyWithoutReceiverNestedInput
     createdGroups?: GroupUncheckedUpdateManyWithoutCreatorNestedInput
     MessageRead?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUncheckedUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUncheckedUpdateManyWithoutReceiverNestedInput
   }
 
   export type ConversationUpsertWithoutParticipantsInput = {
@@ -11020,6 +12888,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantCreateNestedManyWithoutUserInput
     createdGroups?: GroupCreateNestedManyWithoutCreatorInput
     MessageRead?: MessageReadCreateNestedManyWithoutUserInput
+    callsInitiated?: CallCreateNestedManyWithoutCallerInput
+    callsReceived?: CallCreateNestedManyWithoutReceiverInput
   }
 
   export type UserUncheckedCreateWithoutSentMessagesInput = {
@@ -11038,6 +12908,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
     createdGroups?: GroupUncheckedCreateNestedManyWithoutCreatorInput
     MessageRead?: MessageReadUncheckedCreateNestedManyWithoutUserInput
+    callsInitiated?: CallUncheckedCreateNestedManyWithoutCallerInput
+    callsReceived?: CallUncheckedCreateNestedManyWithoutReceiverInput
   }
 
   export type UserCreateOrConnectWithoutSentMessagesInput = {
@@ -11061,6 +12933,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantCreateNestedManyWithoutUserInput
     createdGroups?: GroupCreateNestedManyWithoutCreatorInput
     MessageRead?: MessageReadCreateNestedManyWithoutUserInput
+    callsInitiated?: CallCreateNestedManyWithoutCallerInput
+    callsReceived?: CallCreateNestedManyWithoutReceiverInput
   }
 
   export type UserUncheckedCreateWithoutReceivedMessagesInput = {
@@ -11079,6 +12953,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
     createdGroups?: GroupUncheckedCreateNestedManyWithoutCreatorInput
     MessageRead?: MessageReadUncheckedCreateNestedManyWithoutUserInput
+    callsInitiated?: CallUncheckedCreateNestedManyWithoutCallerInput
+    callsReceived?: CallUncheckedCreateNestedManyWithoutReceiverInput
   }
 
   export type UserCreateOrConnectWithoutReceivedMessagesInput = {
@@ -11154,6 +13030,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantUpdateManyWithoutUserNestedInput
     createdGroups?: GroupUpdateManyWithoutCreatorNestedInput
     MessageRead?: MessageReadUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUpdateManyWithoutReceiverNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSentMessagesInput = {
@@ -11172,6 +13050,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
     createdGroups?: GroupUncheckedUpdateManyWithoutCreatorNestedInput
     MessageRead?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUncheckedUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUncheckedUpdateManyWithoutReceiverNestedInput
   }
 
   export type UserUpsertWithoutReceivedMessagesInput = {
@@ -11201,6 +13081,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantUpdateManyWithoutUserNestedInput
     createdGroups?: GroupUpdateManyWithoutCreatorNestedInput
     MessageRead?: MessageReadUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUpdateManyWithoutReceiverNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReceivedMessagesInput = {
@@ -11219,6 +13101,8 @@ export namespace Prisma {
     conversations?: ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
     createdGroups?: GroupUncheckedUpdateManyWithoutCreatorNestedInput
     MessageRead?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUncheckedUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUncheckedUpdateManyWithoutReceiverNestedInput
   }
 
   export type ConversationUpsertWithoutMessagesInput = {
@@ -11299,6 +13183,8 @@ export namespace Prisma {
     receivedMessages?: MessageCreateNestedManyWithoutReceiverInput
     conversations?: ConversationParticipantCreateNestedManyWithoutUserInput
     createdGroups?: GroupCreateNestedManyWithoutCreatorInput
+    callsInitiated?: CallCreateNestedManyWithoutCallerInput
+    callsReceived?: CallCreateNestedManyWithoutReceiverInput
   }
 
   export type UserUncheckedCreateWithoutMessageReadInput = {
@@ -11317,6 +13203,8 @@ export namespace Prisma {
     receivedMessages?: MessageUncheckedCreateNestedManyWithoutReceiverInput
     conversations?: ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
     createdGroups?: GroupUncheckedCreateNestedManyWithoutCreatorInput
+    callsInitiated?: CallUncheckedCreateNestedManyWithoutCallerInput
+    callsReceived?: CallUncheckedCreateNestedManyWithoutReceiverInput
   }
 
   export type UserCreateOrConnectWithoutMessageReadInput = {
@@ -11388,6 +13276,8 @@ export namespace Prisma {
     receivedMessages?: MessageUpdateManyWithoutReceiverNestedInput
     conversations?: ConversationParticipantUpdateManyWithoutUserNestedInput
     createdGroups?: GroupUpdateManyWithoutCreatorNestedInput
+    callsInitiated?: CallUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUpdateManyWithoutReceiverNestedInput
   }
 
   export type UserUncheckedUpdateWithoutMessageReadInput = {
@@ -11406,6 +13296,8 @@ export namespace Prisma {
     receivedMessages?: MessageUncheckedUpdateManyWithoutReceiverNestedInput
     conversations?: ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
     createdGroups?: GroupUncheckedUpdateManyWithoutCreatorNestedInput
+    callsInitiated?: CallUncheckedUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUncheckedUpdateManyWithoutReceiverNestedInput
   }
 
   export type UserCreateWithoutCreatedGroupsInput = {
@@ -11424,6 +13316,8 @@ export namespace Prisma {
     receivedMessages?: MessageCreateNestedManyWithoutReceiverInput
     conversations?: ConversationParticipantCreateNestedManyWithoutUserInput
     MessageRead?: MessageReadCreateNestedManyWithoutUserInput
+    callsInitiated?: CallCreateNestedManyWithoutCallerInput
+    callsReceived?: CallCreateNestedManyWithoutReceiverInput
   }
 
   export type UserUncheckedCreateWithoutCreatedGroupsInput = {
@@ -11442,6 +13336,8 @@ export namespace Prisma {
     receivedMessages?: MessageUncheckedCreateNestedManyWithoutReceiverInput
     conversations?: ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
     MessageRead?: MessageReadUncheckedCreateNestedManyWithoutUserInput
+    callsInitiated?: CallUncheckedCreateNestedManyWithoutCallerInput
+    callsReceived?: CallUncheckedCreateNestedManyWithoutReceiverInput
   }
 
   export type UserCreateOrConnectWithoutCreatedGroupsInput = {
@@ -11501,6 +13397,8 @@ export namespace Prisma {
     receivedMessages?: MessageUpdateManyWithoutReceiverNestedInput
     conversations?: ConversationParticipantUpdateManyWithoutUserNestedInput
     MessageRead?: MessageReadUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUpdateManyWithoutReceiverNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedGroupsInput = {
@@ -11519,6 +13417,8 @@ export namespace Prisma {
     receivedMessages?: MessageUncheckedUpdateManyWithoutReceiverNestedInput
     conversations?: ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
     MessageRead?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUncheckedUpdateManyWithoutCallerNestedInput
+    callsReceived?: CallUncheckedUpdateManyWithoutReceiverNestedInput
   }
 
   export type ConversationUpsertWithoutGroupInput = {
@@ -11550,6 +13450,198 @@ export namespace Prisma {
     isGroup?: BoolFieldUpdateOperationsInput | boolean
     participants?: ConversationParticipantUncheckedUpdateManyWithoutConversationNestedInput
     messages?: MessageUncheckedUpdateManyWithoutConversationNestedInput
+  }
+
+  export type UserCreateWithoutCallsInitiatedInput = {
+    id?: string
+    firstName: string
+    lastName: string
+    email: string
+    password?: string | null
+    googleId?: string | null
+    avatar?: string | null
+    isEmailVerified?: boolean
+    about?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    sentMessages?: MessageCreateNestedManyWithoutSenderInput
+    receivedMessages?: MessageCreateNestedManyWithoutReceiverInput
+    conversations?: ConversationParticipantCreateNestedManyWithoutUserInput
+    createdGroups?: GroupCreateNestedManyWithoutCreatorInput
+    MessageRead?: MessageReadCreateNestedManyWithoutUserInput
+    callsReceived?: CallCreateNestedManyWithoutReceiverInput
+  }
+
+  export type UserUncheckedCreateWithoutCallsInitiatedInput = {
+    id?: string
+    firstName: string
+    lastName: string
+    email: string
+    password?: string | null
+    googleId?: string | null
+    avatar?: string | null
+    isEmailVerified?: boolean
+    about?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    sentMessages?: MessageUncheckedCreateNestedManyWithoutSenderInput
+    receivedMessages?: MessageUncheckedCreateNestedManyWithoutReceiverInput
+    conversations?: ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
+    createdGroups?: GroupUncheckedCreateNestedManyWithoutCreatorInput
+    MessageRead?: MessageReadUncheckedCreateNestedManyWithoutUserInput
+    callsReceived?: CallUncheckedCreateNestedManyWithoutReceiverInput
+  }
+
+  export type UserCreateOrConnectWithoutCallsInitiatedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutCallsInitiatedInput, UserUncheckedCreateWithoutCallsInitiatedInput>
+  }
+
+  export type UserCreateWithoutCallsReceivedInput = {
+    id?: string
+    firstName: string
+    lastName: string
+    email: string
+    password?: string | null
+    googleId?: string | null
+    avatar?: string | null
+    isEmailVerified?: boolean
+    about?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    sentMessages?: MessageCreateNestedManyWithoutSenderInput
+    receivedMessages?: MessageCreateNestedManyWithoutReceiverInput
+    conversations?: ConversationParticipantCreateNestedManyWithoutUserInput
+    createdGroups?: GroupCreateNestedManyWithoutCreatorInput
+    MessageRead?: MessageReadCreateNestedManyWithoutUserInput
+    callsInitiated?: CallCreateNestedManyWithoutCallerInput
+  }
+
+  export type UserUncheckedCreateWithoutCallsReceivedInput = {
+    id?: string
+    firstName: string
+    lastName: string
+    email: string
+    password?: string | null
+    googleId?: string | null
+    avatar?: string | null
+    isEmailVerified?: boolean
+    about?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    sentMessages?: MessageUncheckedCreateNestedManyWithoutSenderInput
+    receivedMessages?: MessageUncheckedCreateNestedManyWithoutReceiverInput
+    conversations?: ConversationParticipantUncheckedCreateNestedManyWithoutUserInput
+    createdGroups?: GroupUncheckedCreateNestedManyWithoutCreatorInput
+    MessageRead?: MessageReadUncheckedCreateNestedManyWithoutUserInput
+    callsInitiated?: CallUncheckedCreateNestedManyWithoutCallerInput
+  }
+
+  export type UserCreateOrConnectWithoutCallsReceivedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutCallsReceivedInput, UserUncheckedCreateWithoutCallsReceivedInput>
+  }
+
+  export type UserUpsertWithoutCallsInitiatedInput = {
+    update: XOR<UserUpdateWithoutCallsInitiatedInput, UserUncheckedUpdateWithoutCallsInitiatedInput>
+    create: XOR<UserCreateWithoutCallsInitiatedInput, UserUncheckedCreateWithoutCallsInitiatedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutCallsInitiatedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutCallsInitiatedInput, UserUncheckedUpdateWithoutCallsInitiatedInput>
+  }
+
+  export type UserUpdateWithoutCallsInitiatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    firstName?: StringFieldUpdateOperationsInput | string
+    lastName?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    isEmailVerified?: BoolFieldUpdateOperationsInput | boolean
+    about?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sentMessages?: MessageUpdateManyWithoutSenderNestedInput
+    receivedMessages?: MessageUpdateManyWithoutReceiverNestedInput
+    conversations?: ConversationParticipantUpdateManyWithoutUserNestedInput
+    createdGroups?: GroupUpdateManyWithoutCreatorNestedInput
+    MessageRead?: MessageReadUpdateManyWithoutUserNestedInput
+    callsReceived?: CallUpdateManyWithoutReceiverNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutCallsInitiatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    firstName?: StringFieldUpdateOperationsInput | string
+    lastName?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    isEmailVerified?: BoolFieldUpdateOperationsInput | boolean
+    about?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sentMessages?: MessageUncheckedUpdateManyWithoutSenderNestedInput
+    receivedMessages?: MessageUncheckedUpdateManyWithoutReceiverNestedInput
+    conversations?: ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
+    createdGroups?: GroupUncheckedUpdateManyWithoutCreatorNestedInput
+    MessageRead?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
+    callsReceived?: CallUncheckedUpdateManyWithoutReceiverNestedInput
+  }
+
+  export type UserUpsertWithoutCallsReceivedInput = {
+    update: XOR<UserUpdateWithoutCallsReceivedInput, UserUncheckedUpdateWithoutCallsReceivedInput>
+    create: XOR<UserCreateWithoutCallsReceivedInput, UserUncheckedCreateWithoutCallsReceivedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutCallsReceivedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutCallsReceivedInput, UserUncheckedUpdateWithoutCallsReceivedInput>
+  }
+
+  export type UserUpdateWithoutCallsReceivedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    firstName?: StringFieldUpdateOperationsInput | string
+    lastName?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    isEmailVerified?: BoolFieldUpdateOperationsInput | boolean
+    about?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sentMessages?: MessageUpdateManyWithoutSenderNestedInput
+    receivedMessages?: MessageUpdateManyWithoutReceiverNestedInput
+    conversations?: ConversationParticipantUpdateManyWithoutUserNestedInput
+    createdGroups?: GroupUpdateManyWithoutCreatorNestedInput
+    MessageRead?: MessageReadUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUpdateManyWithoutCallerNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutCallsReceivedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    firstName?: StringFieldUpdateOperationsInput | string
+    lastName?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    googleId?: NullableStringFieldUpdateOperationsInput | string | null
+    avatar?: NullableStringFieldUpdateOperationsInput | string | null
+    isEmailVerified?: BoolFieldUpdateOperationsInput | boolean
+    about?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sentMessages?: MessageUncheckedUpdateManyWithoutSenderNestedInput
+    receivedMessages?: MessageUncheckedUpdateManyWithoutReceiverNestedInput
+    conversations?: ConversationParticipantUncheckedUpdateManyWithoutUserNestedInput
+    createdGroups?: GroupUncheckedUpdateManyWithoutCreatorNestedInput
+    MessageRead?: MessageReadUncheckedUpdateManyWithoutUserNestedInput
+    callsInitiated?: CallUncheckedUpdateManyWithoutCallerNestedInput
   }
 
   export type MessageCreateManySenderInput = {
@@ -11596,6 +13688,24 @@ export namespace Prisma {
     id?: string
     messageId: string
     readAt?: Date | string
+  }
+
+  export type CallCreateManyCallerInput = {
+    id?: string
+    receiverId: string
+    status: $Enums.CallStatus
+    startedAt?: Date | string
+    endedAt?: Date | string | null
+    duration?: number | null
+  }
+
+  export type CallCreateManyReceiverInput = {
+    id?: string
+    callerId: string
+    status: $Enums.CallStatus
+    startedAt?: Date | string
+    endedAt?: Date | string | null
+    duration?: number | null
   }
 
   export type MessageUpdateWithoutSenderInput = {
@@ -11738,6 +13848,60 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     messageId?: StringFieldUpdateOperationsInput | string
     readAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CallUpdateWithoutCallerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    duration?: NullableIntFieldUpdateOperationsInput | number | null
+    receiver?: UserUpdateOneRequiredWithoutCallsReceivedNestedInput
+  }
+
+  export type CallUncheckedUpdateWithoutCallerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    receiverId?: StringFieldUpdateOperationsInput | string
+    status?: EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    duration?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type CallUncheckedUpdateManyWithoutCallerInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    receiverId?: StringFieldUpdateOperationsInput | string
+    status?: EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    duration?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type CallUpdateWithoutReceiverInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    duration?: NullableIntFieldUpdateOperationsInput | number | null
+    caller?: UserUpdateOneRequiredWithoutCallsInitiatedNestedInput
+  }
+
+  export type CallUncheckedUpdateWithoutReceiverInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    callerId?: StringFieldUpdateOperationsInput | string
+    status?: EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    duration?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type CallUncheckedUpdateManyWithoutReceiverInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    callerId?: StringFieldUpdateOperationsInput | string
+    status?: EnumCallStatusFieldUpdateOperationsInput | $Enums.CallStatus
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    duration?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
   export type ConversationParticipantCreateManyConversationInput = {

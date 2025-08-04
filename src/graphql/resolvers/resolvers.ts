@@ -1,4 +1,4 @@
-import { addIceCandidate, answerCall, callSubscriptions, endCall, getCallHistory, startCall } from "../../controllers/callcontrollers";
+import { addIceCandidate, answerCall, callSubscriptions, endCall, getCall, getCallHistory, getCurrentUser, startCall } from "../../controllers/callcontrollers";
 import { addGroupParticipants, createConversation, createGroup, deleteGroup, deleteMessage, getConversations, getGroup, getMessages, getUserByEmail, getUserGroups, leaveGroup, markAsRead, removeGroupParticipant, searchUsers, sendMessage, updateGroup, updateMessage } from "../../controllers/chatcontroller";
 import {
   getAllUsers,
@@ -24,9 +24,10 @@ export const graphQLResolver = {
     userByEmail: getUserByEmail,
     searchUsers: searchUsers,
     getGroup,
-    getUserGroups,getCallHistory
-    
-
+    getUserGroups,
+    getCall, // Add the missing getCall resolver
+    getCallHistory,
+    currentUser: getCurrentUser,
   },
   Mutation: {
     signup,
@@ -43,11 +44,11 @@ export const graphQLResolver = {
     createGroup,
     updateMessage,
     updateGroup,
-addGroupParticipants,
-removeGroupParticipant,
-leaveGroup,
-deleteGroup,
-   startCall,
+    addGroupParticipants,
+    removeGroupParticipant,
+    leaveGroup,
+    deleteGroup,
+    startCall,
     answerCall,
     endCall,
     addIceCandidate
@@ -56,8 +57,6 @@ deleteGroup,
     messageSent: {
       subscribe: (_: any, { conversationId }: { conversationId: string }, context: any) => {
         if (!context.userId) throw new Error('Unauthorized');
-        
-        // Verify user is part of conversation
         return (pubsub as any).asyncIterator(`MESSAGE_SENT_${conversationId}`);
       }
     },
@@ -66,8 +65,10 @@ deleteGroup,
         if (!context.userId) throw new Error('Unauthorized');
         return (pubsub as any).asyncIterator([`NEW_MESSAGE_${context.userId}`]);
       }
-    }
-    
-  },
-    ...callSubscriptions
+    },
+    callInitiated: callSubscriptions.callInitiated,
+    callAnswered: callSubscriptions.callAnswered,
+    callEnded: callSubscriptions.callEnded,
+    iceCandidateReceived: callSubscriptions.iceCandidateReceived
+  }
 };

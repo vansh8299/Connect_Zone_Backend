@@ -9,6 +9,8 @@ type User {
   avatar: String
   isEmailVerified: Boolean
   about: String
+  createdAt: String!
+  updatedAt: String!
 }
 
 input LoginInput {
@@ -48,8 +50,6 @@ type AuthPayload {
   user: User!
 }
 
-
-
 input GoogleAuthInput {
   idToken: String!
 }
@@ -85,15 +85,16 @@ type UpdateUserResponse {
   isEmailVerified: Boolean
   about: String
 }
-  type UpdatePasswordResponse {
-    success: Boolean!
-    message: String!
-  }
 
-  input UpdatePasswordInput {
-    email: String!
-    password: String!
-  }
+type UpdatePasswordResponse {
+  success: Boolean!
+  message: String!
+}
+
+input UpdatePasswordInput {
+  email: String!
+  password: String!
+}
 
 type Message {
   id: ID!
@@ -106,6 +107,7 @@ type Message {
   type: MessageType!
   deletedFor: [String!]!
 }
+
 enum DeleteType {
   DELETE_FOR_EVERYONE
   DELETE_FOR_ME
@@ -155,8 +157,6 @@ input SendMessageInput {
   content: String!
 }
 
-
-
 type Group {
   id: ID!
   name: String!
@@ -173,7 +173,7 @@ input CreateGroupInput {
   name: String!
   description: String
   participantIds: [ID!]!
-   avatarBase64: String
+  avatarBase64: String
 }
 
 input UpdateGroupInput {
@@ -182,10 +182,12 @@ input UpdateGroupInput {
   description: String
   avatarBase64: String 
 }
+
 input UpdateMessageInput {
   messageId: ID!
   newContent: String!
 }
+
 type Call {
   id: ID!
   caller: User!
@@ -232,26 +234,28 @@ input IceCandidateInput {
 input EndCallInput {
   callId: ID!
 }
-extend type Query {
-  getGroup(groupId: ID!): Group
-  getUserGroups: [Group!]!
-}
-  type DeleteMessageResponse {
+
+type DeleteMessageResponse {
   success: Boolean!
   messageId: ID!
   conversationId: ID!
   deleteType: DeleteType!
 }
-  type Query {
+
+type Query {
   users: [User]
   user(id: ID!): User
   userByEmail(email: String!): User
   searchUsers(searchTerm: String!): [User]
   getConversations: [Conversation!]!
-getCallHistory: [Call!]!
-
+  getCall(id: ID!): Call
+  getCallHistory: [Call!]!
   getMessages(conversationId: ID!): [Message!]!
+  getGroup(groupId: ID!): Group
+  getUserGroups: [Group!]!
+  currentUser: User!
 }
+
 type Mutation {
   signup(input: SignupInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
@@ -261,27 +265,28 @@ type Mutation {
   updateUser(input: UpdateUserInput!): UpdateUserResponse!
   updateMessage(input: UpdateMessageInput!): Message!
   updatePassword(input: UpdatePasswordInput!): UpdatePasswordResponse!
-     deleteMessage(input: DeleteMessageInput!): DeleteMessageResponse!
+  deleteMessage(input: DeleteMessageInput!): DeleteMessageResponse!
   createConversation(participantIds: [ID!]!): Conversation!
   sendMessage(input: SendMessageInput!): Message!
   markAsRead(messageId: ID!): Message!
-   startCall(input: StartCallInput!): CallPayload!
+  startCall(input: StartCallInput!): CallPayload!
   answerCall(input: AnswerCallInput!): CallPayload!
   endCall(input: EndCallInput!): Call!
   addIceCandidate(input: IceCandidateInput!): Boolean!
-   createGroup(input: CreateGroupInput!): Group!
+  createGroup(input: CreateGroupInput!): Group!
   updateGroup(input: UpdateGroupInput!): Group!
   addGroupParticipants(groupId: ID!, participantIds: [ID!]!): Group!
   removeGroupParticipant(groupId: ID!, participantId: ID!): Group!
   leaveGroup(groupId: ID!): Boolean!
   deleteGroup(groupId: ID!): Boolean!
 }
-  type Subscription {
+
+type Subscription {
   messageSent(conversationId: ID!): Message!
   newMessage: Message!
   callInitiated: CallPayload!
-  callAnswered: CallPayload!
-  callEnded: Call!
-  iceCandidateReceived: IceCandidatePayload!
+  callAnswered(callId: ID!): CallPayload!
+  callEnded(callId: ID!): Call!
+  iceCandidateReceived(callId: ID!): IceCandidatePayload!
 }
 `;

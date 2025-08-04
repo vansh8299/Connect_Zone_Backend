@@ -13,6 +13,6 @@
     
     "typeRoots": ["src/graphql/types"]
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/controllers/callcontrollers.js"],
   "exclude": ["node_modules", "dist"]
 }

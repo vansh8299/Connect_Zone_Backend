@@ -1,4 +1,4 @@
-// callcontrollers.ts - Enhanced with better error handling and logging
+// callcontrollers.ts - Fixed with better error handling and proper subscription resolvers
 
 import { PrismaClient, CallStatus } from "../generated/prisma";
 import { PubSub } from 'graphql-subscriptions';
@@ -205,6 +205,10 @@ export const startCall = async (_: any, { input }: { input: { receiverId: string
             status: { in: ['INITIATED', 'ONGOING'] }
           }
         ]
+      },
+      include: {
+        caller: true,
+        receiver: true
       }
     });
     
@@ -255,6 +259,8 @@ export const startCall = async (_: any, { input }: { input: { receiverId: string
     };
   } catch (error) {
     console.error('Error starting call:', error);
+    // RE-THROW the error so GraphQL can handle it properly
+    throw error;
   }
 };
 
@@ -319,6 +325,7 @@ export const answerCall = async (_: any, { input }: { input: { callId: string, s
     };
   } catch (error) {
     console.error('Error answering call:', error);
+    throw error; // Fixed: Re-throw the error instead of swallowing it
   }
 };
 
@@ -384,6 +391,7 @@ export const endCall = async (_: any, { input }: { input: { callId: string } }, 
     return endedCall;
   } catch (error) {
     console.error('Error ending call:', error);
+    throw error; // Fixed: Re-throw the error instead of swallowing it
   }
 };
 
@@ -421,24 +429,46 @@ export const addIceCandidate = async (_: any, { input }: { input: { callId: stri
     return true;
   } catch (error) {
     console.error('Error adding ICE candidate:', error);
+    throw error; // Fixed: Re-throw the error instead of swallowing it
   }
 };
 
 export const callSubscriptions = {
   callInitiated: {
     subscribe: (_: any, __: any, context: Context) => {
-      const currentuserId = getCurrentUserId(context);
-      console.log('User subscribed to callInitiated:', currentuserId);
-      return pubsub.asyncIterator(['callInitiated']);
+      try {
+        const currentuserId = getCurrentUserId(context);
+        console.log('User subscribed to callInitiated:', currentuserId);
+        return pubsub.asyncIterator(['callInitiated']);
+      } catch (error) {
+        console.error('Error in callInitiated subscription:', error);
+        throw new Error('Unauthorized');
+      }
     },
     resolve: (payload: any, _: any, context: Context) => {
       try {
-        // Only notify the intended receiver
+        console.log('callInitiated resolver payload:', payload);
+        
+        // Check for proper payload structure
+        if (!payload?.callInitiated?.call) {
+          console.log('Invalid payload structure');
+          return null;
+        }
+        
         const currentuserId = getCurrentUserId(context);
-        if (payload.callInitiated?.call?.receiverId === currentuserId) {
+        const call = payload.callInitiated.call;
+        
+        console.log('Call receiver ID:', call.receiverId);
+        console.log('Current user ID:', currentuserId);
+        console.log('Call caller ID:', call.callerId);
+        
+        // Only send to receiver, exclude the caller
+        if (call.receiverId === currentuserId && call.callerId !== currentuserId) {
           console.log('Sending callInitiated to receiver:', currentuserId);
           return payload.callInitiated;
         }
+        
+        console.log('Not sending callInitiated to this user');
         return null;
       } catch (error) {
         console.error('Error in callInitiated resolver:', error);
@@ -448,20 +478,46 @@ export const callSubscriptions = {
   },
   callAnswered: {
     subscribe: (_: any, { callId }: { callId: string }, context: Context) => {
-      const currentuserId = getCurrentUserId(context);
-      console.log('User subscribed to callAnswered for call:', callId, 'user:', currentuserId);
-      return pubsub.asyncIterator([`callAnswered_${callId}`]);
-    },
-    resolve: (payload: any, args: { callId: string }, context: Context) => {
       try {
-        // Only notify participants of this specific call
         const currentuserId = getCurrentUserId(context);
+        console.log('User subscribed to callAnswered for call:', callId, 'user:', currentuserId);
+        return pubsub.asyncIterator([`callAnswered_${callId}`]);
+      } catch (error) {
+        console.error('Error in callAnswered subscription:', error);
+        throw new Error('Unauthorized');
+      }
+    },
+    resolve: async (payload: any, args: { callId: string }, context: Context) => {
+      try {
+        console.log('callAnswered resolver payload:', payload);
+        
+        // Check for proper payload structure
+        if (!payload?.callAnswered) {
+          console.log('Invalid callAnswered payload structure');
+          return null;
+        }
+        
+        const currentuserId = getCurrentUserId(context);
+        
+        // Verify the call exists and user is participant
+        const call = await prisma.call.findUnique({
+          where: { id: args.callId },
+          select: { callerId: true, receiverId: true }
+        });
+        
+        if (!call) {
+          console.log('Call not found for subscription:', args.callId);
+          return null;
+        }
+        
+        // Only notify participants of this specific call
         if (payload.callAnswered?.call?.id === args.callId && 
-            (payload.callAnswered?.call?.callerId === currentuserId || 
-             payload.callAnswered?.call?.receiverId === currentuserId)) {
+            (call.callerId === currentuserId || call.receiverId === currentuserId)) {
           console.log('Sending callAnswered to user:', currentuserId);
           return payload.callAnswered;
         }
+        
+        console.log('Not sending callAnswered to this user');
         return null;
       } catch (error) {
         console.error('Error in callAnswered resolver:', error);
@@ -471,20 +527,46 @@ export const callSubscriptions = {
   },
   callEnded: {
     subscribe: (_: any, { callId }: { callId: string }, context: Context) => {
-      const currentuserId = getCurrentUserId(context);
-      console.log('User subscribed to callEnded for call:', callId, 'user:', currentuserId);
-      return pubsub.asyncIterator([`callEnded_${callId}`]);
-    },
-    resolve: (payload: any, args: { callId: string }, context: Context) => {
       try {
-        // Notify both participants of this specific call
         const currentuserId = getCurrentUserId(context);
+        console.log('User subscribed to callEnded for call:', callId, 'user:', currentuserId);
+        return pubsub.asyncIterator([`callEnded_${callId}`]);
+      } catch (error) {
+        console.error('Error in callEnded subscription:', error);
+        throw new Error('Unauthorized');
+      }
+    },
+    resolve: async (payload: any, args: { callId: string }, context: Context) => {
+      try {
+        console.log('callEnded resolver payload:', payload);
+        
+        // Check for proper payload structure
+        if (!payload?.callEnded) {
+          console.log('Invalid callEnded payload structure');
+          return null;
+        }
+        
+        const currentuserId = getCurrentUserId(context);
+        
+        // Verify the call exists and user is participant
+        const call = await prisma.call.findUnique({
+          where: { id: args.callId },
+          select: { callerId: true, receiverId: true }
+        });
+        
+        if (!call) {
+          console.log('Call not found for subscription:', args.callId);
+          return null;
+        }
+        
+        // Notify both participants of this specific call
         if (payload.callEnded?.id === args.callId && 
-            (payload.callEnded?.callerId === currentuserId || 
-             payload.callEnded?.receiverId === currentuserId)) {
+            (call.callerId === currentuserId || call.receiverId === currentuserId)) {
           console.log('Sending callEnded to user:', currentuserId);
           return payload.callEnded;
         }
+        
+        console.log('Not sending callEnded to this user');
         return null;
       } catch (error) {
         console.error('Error in callEnded resolver:', error);
@@ -494,31 +576,46 @@ export const callSubscriptions = {
   },
   iceCandidateReceived: {
     subscribe: (_: any, { callId }: { callId: string }, context: Context) => {
-      const currentuserId = getCurrentUserId(context);
-      console.log('User subscribed to iceCandidateReceived for call:', callId, 'user:', currentuserId);
-      return pubsub.asyncIterator([`iceCandidateReceived_${callId}`]);
+      try {
+        const currentuserId = getCurrentUserId(context);
+        console.log('User subscribed to iceCandidateReceived for call:', callId, 'user:', currentuserId);
+        return pubsub.asyncIterator([`iceCandidateReceived_${callId}`]);
+      } catch (error) {
+        console.error('Error in iceCandidateReceived subscription:', error);
+        throw new Error('Unauthorized');
+      }
     },
     resolve: async (payload: any, args: { callId: string }, context: Context) => {
       try {
-        // Check if payload exists and matches the call
-        if (!payload || !payload.iceCandidateReceived || 
+        console.log('iceCandidateReceived resolver payload:', payload);
+        
+        // Check for proper payload structure
+        if (!payload?.iceCandidateReceived || 
             payload.iceCandidateReceived.callId !== args.callId) {
+          console.log('Invalid iceCandidateReceived payload structure or wrong call ID');
           return null;
         }
         
+        const currentuserId = getCurrentUserId(context);
+        
         // Get the call to check participants
         const call = await prisma.call.findUnique({
-          where: { id: args.callId }
+          where: { id: args.callId },
+          select: { callerId: true, receiverId: true }
         });
         
-        if (!call) return null;
+        if (!call) {
+          console.log('Call not found for ICE candidate:', args.callId);
+          return null;
+        }
         
-        // Only notify the other participant (not the sender)
-        const currentuserId = getCurrentUserId(context);
+        // Only notify participants (the ICE candidate will be filtered by client logic)
         if (call.callerId === currentuserId || call.receiverId === currentuserId) {
           console.log('Sending ICE candidate to user:', currentuserId);
           return payload.iceCandidateReceived;
         }
+        
+        console.log('Not sending ICE candidate to this user');
         return null;
       } catch (error) {
         console.error('Error in iceCandidateReceived resolver:', error);

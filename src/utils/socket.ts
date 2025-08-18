@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 export const initializeSocket = (httpServer: HttpServer) => {
   const io = new Server(httpServer, {
     cors: {
-      origin: process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:3000",
+      origin: process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:3000" || "http://localhost:3001",
       methods: ["GET", "POST"],
       credentials: true,
       allowedHeaders: ["Content-Type", "Authorization"]

@@ -21,7 +21,7 @@ const startServer = async () => {
     // Initialize Socket.IO with this server
     io = new SocketServer(httpServer, {
       cors: {
-        origin: process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:3000",
+        origin: process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:3000" || "http://localhost:3001" ,
         methods: ["GET", "POST"],
         credentials: true,
         allowedHeaders: ["Content-Type", "Authorization"]

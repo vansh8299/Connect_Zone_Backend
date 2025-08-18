@@ -284,9 +284,9 @@ type Mutation {
 type Subscription {
   messageSent(conversationId: ID!): Message!
   newMessage: Message!
-  callInitiated: CallPayload!
-  callAnswered(callId: ID!): CallPayload!
-  callEnded(callId: ID!): Call!
-  iceCandidateReceived(callId: ID!): IceCandidatePayload!
+  callInitiated: CallPayload
+  callAnswered(callId: ID!): CallPayload
+  callEnded(callId: ID!): Call
+  iceCandidateReceived(callId: ID!): IceCandidatePayload
 }
 `;

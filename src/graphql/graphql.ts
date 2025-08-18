@@ -24,11 +24,14 @@ export type Context = {
 
 export const connectGraphQL = async (config: ServerConfig) => {
   // Support multiple origins or use a default
-  const origins = Array.isArray(config.corsOrigin) 
+const origins = Array.isArray(config.corsOrigin) 
     ? config.corsOrigin 
     : config.corsOrigin 
       ? [config.corsOrigin] 
-      : [process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:3000"];
+      : [
+          process.env.NEXT_PUBLIC_CLIENT_URL || "http://localhost:3000",
+          "http://localhost:3001"
+        ];
   
   // Setup Apollo Server
   const server = new ApolloServer<Context>({

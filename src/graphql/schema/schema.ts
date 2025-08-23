@@ -206,6 +206,19 @@ enum CallStatus {
   COMPLETED
 }
 
+type CallResponse {
+  call: Call!
+  sdpOffer: String
+  sdpAnswer: String
+}
+
+type CallSignalingResponse {
+  call: Call!
+  sdpOffer: String
+  sdpAnswer: String
+  iceCandidate: String
+}
+
 type CallPayload {
   call: Call!
   sdpOffer: String
@@ -219,6 +232,7 @@ type IceCandidatePayload {
 
 input StartCallInput {
   receiverId: ID!
+  sdpOffer: String!  
 }
 
 input AnswerCallInput {

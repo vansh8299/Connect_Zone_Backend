@@ -3,7 +3,7 @@
 import { PrismaClient, CallStatus } from "../generated/prisma";
 import { PubSub } from "graphql-subscriptions";
 import { Context } from "../graphql/types/types";
-import { GraphQLError, GraphQLID } from "graphql";
+import { GraphQLError } from "graphql";
 
 const prisma = new PrismaClient();
 const pubsub = new PubSub() as any;
@@ -260,7 +260,8 @@ export const startCall = async (
           })
         : null;
 
-      await pubsub.publish("callInitiated", {
+      // Publish to specific receiver's channel
+      await pubsub.publish(`callInitiated_${call.receiverId}`, {
         callInitiated: {
           call,
           sdpOffer: cleanSdpOffer,
@@ -487,7 +488,8 @@ export const callSubscriptions = {
       try {
         const currentuserId = await getCurrentUserId(context);
         console.log("User subscribed to callInitiated:", currentuserId);
-        return pubsub.asyncIterator(["callInitiated"]);
+        // Listen to all call events for this user
+        return pubsub.asyncIterator([`callInitiated_${currentuserId}`]);
       } catch (error) {
         console.error("Error in callInitiated subscription:", error);
         throw new GraphQLError("Unauthorized", {

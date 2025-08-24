@@ -95,7 +95,7 @@ export const connectGraphQL = async (config: ServerConfig) => {
 
   app.use(
     express.urlencoded({
-      limit: "10mb",
+      limit: "50mb",
       extended: true,
     })
   );
